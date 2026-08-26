@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Mon budget</title>
+<style>
+  :root{
+    --bg: #FBF7F0;
+    --paper: #FFFFFF;
+    --border: #E9DFD0;
+    --text: #2E2A26;
+    --text-soft: #746A5D;
+    --accent: #B5541A;
+    --accent-dark: #8E4014;
+    --accent-soft: #F3E3D6;
+    --green: #3F7D4F;
+    --green-soft: #E4F0E6;
+    --red: #B23A3A;
+    --red-soft: #FBE9E7;
+    --blue: #2B6777;
+    --blue-soft: #E4EEF0;
+    --shadow: 0 2px 10px rgba(60,45,25,0.08);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    font-size:17px;
+    line-height:1.4;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:60px;
+  }
+  h1,h2,h3{margin:0 0 6px 0; font-weight:700;}
+  button{
+    font-family:inherit;
+    font-size:16px;
+    cursor:pointer;
+    border:none;
+    border-radius:12px;
+    padding:12px 18px;
+    background:var(--accent);
+    color:white;
+    font-weight:600;
+    transition: background .15s, transform .05s;
+  }
+  button:active{transform:scale(0.97);}
+  button.secondary{
+    background:var(--paper);
+    color:var(--text);
+    border:2px solid var(--border);
+  }
+  button.ghost{
+    background:transparent;
+    color:var(--accent-dark);
+    border:2px solid var(--accent-soft);
+    padding:8px 14px;
+  }
+  button.btn-highlight{
+    background:var(--accent);
+    color:white;
+    border:2px solid var(--accent);
+    font-weight:700;
+  }
+  button.btn-highlight:hover{ background:var(--accent-dark); }
+  .icon-btn:disabled{ opacity:.25; cursor:default; }
+  .icon-btn:disabled:hover{ background:transparent; }
+  button.danger{ background:var(--red); }
+  button.small{ padding:8px 12px; font-size:14px; border-radius:9px; }
+  button:disabled{opacity:.5; cursor:default;}
+  input, select{
+    font-family:inherit;
+    font-size:16px;
+    padding:10px 12px;
+    border:2px solid var(--border);
+    border-radius:10px;
+    background:var(--paper);
+    color:var(--text);
+    width:100%;
+  }
+  input:focus, select:focus{ outline:2px solid var(--accent); border-color:var(--accent); }
+  label{ font-size:14px; color:var(--text-soft); font-weight:600; display:block; margin-bottom:4px; }
+  .field{ margin-bottom:14px; }
+
+  /* ===== Layout ===== */
+  #topbar{
+    background:var(--paper);
+    border-bottom:1px solid var(--border);
+    padding:16px 20px;
+    position:sticky; top:0; z-index:30;
+    box-shadow:var(--shadow);
+  }
+  #topbar-row1{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  }
+  #app-title{ font-size:22px; color:var(--accent-dark); }
+  #month-nav{
+    display:flex; align-items:center; gap:10px; background:var(--accent-soft);
+    padding:6px 8px; border-radius:14px;
+  }
+  #month-nav button.navarrow{
+    background:var(--paper); color:var(--accent-dark); width:40px; height:40px;
+    border-radius:10px; padding:0; font-size:20px; display:flex; align-items:center; justify-content:center;
+    border:2px solid var(--border);
+  }
+  #month-label{ font-weight:700; font-size:18px; min-width:150px; text-align:center; }
+
+  #top-icons{
+    display:flex; align-items:center; gap:6px;
+  }
+  .icon-link-btn{
+    background:transparent; color:var(--text-soft); border:none; padding:8px 10px;
+    font-size:15px; font-weight:600; border-radius:10px;
+  }
+  .icon-link-btn:hover{ background:var(--bg); color:var(--accent-dark); }
+  .icon-link-label{ font-size:14px; }
+  @media (max-width:600px){ .icon-link-label{ display:none; } }
+
+  /* Onglets de mois, façon classeur Excel */
+  #month-tabs{
+    display:flex; gap:6px; margin-top:12px; overflow-x:auto; padding-bottom:4px;
+  }
+  .month-tab-btn{
+    background:var(--bg); color:var(--text-soft); border:2px solid var(--border); border-bottom:none;
+    padding:9px 16px; border-radius:10px 10px 0 0; font-weight:600; white-space:nowrap; flex-shrink:0;
+  }
+  .month-tab-btn.active{ background:var(--accent-soft); color:var(--accent-dark); border-color:var(--accent); }
+  .month-tab-add{
+    background:transparent; color:var(--accent-dark); border:2px dashed var(--accent-soft);
+    padding:9px 14px; border-radius:10px 10px 0 0; font-weight:700; white-space:nowrap; flex-shrink:0;
+  }
+  .archived-banner{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--blue-soft); color:var(--blue); border-radius:12px; padding:12px 16px; margin-bottom:16px; font-weight:600;
+  }
+  .archive-card{
+    border:2px solid var(--border); border-radius:var(--radius-sm); padding:16px; margin-bottom:12px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  }
+
+  #layout{
+    max-width:1200px; margin:0 auto; padding:20px;
+    display:grid; grid-template-columns: 1fr 320px; gap:20px;
+    align-items:start;
+  }
+  #main, #sidebar{ min-width:0; }
+  @media (max-width: 880px){
+    #layout{ grid-template-columns: 1fr; }
+    #sidebar{ order:-1; }
+  }
+
+  .card{
+    background:var(--paper); border:1px solid var(--border); border-radius:var(--radius);
+    padding:18px 20px; box-shadow:var(--shadow); margin-bottom:18px;
+  }
+  .card-head{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:8px; flex-wrap:wrap;
+  }
+  .card-head h2{ font-size:19px; color:var(--accent-dark); }
+  .pill{
+    display:inline-block; font-size:13px; font-weight:700; padding:3px 10px; border-radius:999px;
+  }
+  .pill.fixe{ background:var(--blue-soft); color:var(--blue); }
+  .pill.variable{ background:var(--green-soft); color:var(--green); }
+
+  table{ width:100%; border-collapse:collapse; table-layout:auto; }
+  table.line-table th{ text-align:right; font-size:12px; color:var(--text-soft); padding:4px 8px; border-bottom:2px solid var(--border); font-weight:700; }
+  table.line-table th:first-child{ text-align:left; }
+  table.line-table td:first-child{ white-space:nowrap; }
+  table.line-table{ min-width:max-content; }
+  table.line-table td.amt-col, table.line-table th.amt-col{ text-align:right; white-space:nowrap; }
+  .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; min-width:0; }
+  #layout, .card, .modal-box{ max-width:100%; }
+  .card{ min-width:0; }
+  body{ overflow-x:hidden; }
+  th{ text-align:left; font-size:13px; color:var(--text-soft); padding:6px 4px; border-bottom:2px solid var(--border); }
+  td{ padding:9px 8px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  tr.subtotal-row td{ font-weight:700; background:var(--bg); }
+  tr.line-checked{ opacity:0.42; transition:opacity .15s; }
+  .row-check{ width:26px; text-align:center; }
+  .row-check input[type=checkbox]{ width:20px; height:20px; cursor:pointer; }
+  .row-move{ width:44px; white-space:nowrap; padding-right:2px !important; }
+  .row-move .icon-btn{ padding:4px; font-size:13px; }
+  .row-actions{ display:flex; gap:6px; justify-content:flex-end; white-space:nowrap; }
+  .icon-btn{
+    background:transparent; border:none; color:var(--text-soft); padding:6px; border-radius:8px; font-size:17px;
+  }
+  .icon-btn:hover{ background:var(--bg); }
+  .amount{ font-variant-numeric: tabular-nums; font-weight:600; white-space:nowrap; }
+  .amount.neg{ color:var(--red); }
+  .amount.pos{ color:var(--green); }
+  .muted{ color:var(--text-soft); font-size:14px; }
+
+  .total-line{
+    display:flex; justify-content:space-between; align-items:baseline; padding-top:10px; margin-top:6px;
+    border-top:2px solid var(--border); font-size:19px; font-weight:700;
+  }
+
+  /* Sidebar solde */
+  #sidebar .card{ position:sticky; top:180px; }
+  #solde-card{ background:linear-gradient(160deg, var(--accent-soft), var(--paper)); border-color:var(--accent-soft); }
+  #solde-value{ font-size:34px; font-weight:800; color:var(--accent-dark); margin:6px 0; }
+  #solde-reste{ font-size:26px; font-weight:800; margin:6px 0; }
+  .solde-breakdown{ margin-top:10px; font-size:14px; }
+  .solde-breakdown div{ display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px dashed var(--border); }
+
+  .empty-hint{ color:var(--text-soft); font-style:italic; padding:10px 0; }
+
+  /* Apercu 3 mois */
+  #apercu-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:14px; }
+  .apercu-month{
+    border:2px solid var(--border); border-radius:var(--radius-sm); padding:16px; text-align:center;
+  }
+  .apercu-month.current{ border-color:var(--accent); background:var(--accent-soft); }
+  .apercu-month h3{ font-size:17px; margin-bottom:10px; }
+  .apercu-row{ display:flex; justify-content:space-between; font-size:15px; padding:3px 0; }
+  .apercu-solde{ font-size:22px; font-weight:800; margin-top:8px; }
+
+  /* Modal */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(30,20,10,0.4); display:flex; align-items:center; justify-content:center;
+    z-index:100; padding:16px;
+  }
+  .modal-box{
+    background:var(--paper); border-radius:var(--radius); padding:24px; max-width:440px; width:100%;
+    max-height:88vh; overflow-y:auto; box-shadow:0 10px 40px rgba(0,0,0,0.25);
+    position:relative;
+  }
+  .modal-x-close{
+    position:absolute; top:14px; right:14px; background:var(--bg); color:var(--text-soft);
+    border:none; border-radius:50%; width:34px; height:34px; font-size:16px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .modal-x-close:hover{ background:var(--accent-soft); color:var(--accent-dark); }
+  .modal-box-large{
+    max-width:98vw; width:1400px; max-height:96vh;
+  }
+  .modal-box h3{ font-size:20px; margin-bottom:14px; color:var(--accent-dark); }
+  .modal-foot{ display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+  .radio-group{ display:flex; gap:10px; }
+  .radio-opt{
+    flex:1; border:2px solid var(--border); border-radius:10px; padding:10px; text-align:center; cursor:pointer; font-weight:600;
+  }
+  .radio-opt.selected.fixe{ border-color:var(--blue); background:var(--blue-soft); color:var(--blue); }
+  .radio-opt.selected.variable{ border-color:var(--green); background:var(--green-soft); color:var(--green); }
+
+  #toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--text); color:white; padding:12px 20px; border-radius:12px; font-weight:600;
+    box-shadow:0 4px 20px rgba(0,0,0,0.3); z-index:200; opacity:0; pointer-events:none; transition:opacity .25s;
+  }
+  #toast.show{ opacity:1; }
+
+  .cat-block{ margin-bottom:22px; }
+  .cat-block:last-child{ margin-bottom:0; }
+  .cat-block-title{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .cat-block-title h3{ font-size:16px; }
+
+  .add-line-btn{ margin-top:8px; }
+
+  .expense-tag{ font-size:12px; color:var(--text-soft); }
+
+  select.type-select{ width:auto; }
+
+  .settings-list-item{
+    display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);
+  }
+
+  #print-area{ display:none; }
+
+  @media print{
+    @page{ size:A4 landscape; margin:9mm; }
+    body > *:not(#print-area){ display:none !important; }
+    #print-area{ display:block !important; position:static; width:100%; padding:0; font-size:11.5px; }
+    #print-area h1{ font-size:19px; margin:0 0 8px 0; }
+    #print-area h2{ font-size:12.5px; margin:0 0 3px 0; text-transform:uppercase; letter-spacing:.02em; }
+    #print-area table{ width:100%; border-collapse:collapse; margin-bottom:9px;}
+    #print-area td, #print-area th{ border:1px solid #bbb; padding:2.5px 6px; font-size:11px; line-height:1.25; }
+    #print-area td.pchk{ width:14px; text-align:center; padding:2.5px 3px; }
+    #print-area td.pamt, #print-area th.pamt{ text-align:right; white-space:nowrap; width:70px; }
+    #print-area tr.ptotal th{ background:#eee; }
+    #print-area .print-columns{ column-count:4; column-gap:12px; }
+    #print-area .print-col{ break-inside:avoid; margin-bottom:6px; }
+  }
+
+  a.link-btn{ color:var(--accent-dark); font-weight:700; text-decoration:none; cursor:pointer; }
+  .sync-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; }
+  .sync-dot.on{ background:var(--green); }
+  .sync-dot.off{ background:#c9bfae; }
+
+  textarea{
+    font-family: monospace; font-size:13px; width:100%; padding:10px; border-radius:10px; border:2px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div id="topbar-row1">
+    <h1 id="app-title">💶 Mon budget</h1>
+    <div id="top-icons">
+      <button class="icon-link-btn" id="btn-open-archives" title="Archives">🗄️ <span class="icon-link-label">Archives</span></button>
+      <button class="icon-link-btn" id="btn-open-settings" title="Réglages">⚙️</button>
+    </div>
+  </div>
+  <div id="month-tabs"></div>
+</div>
+
+<div id="layout">
+  <div id="main"></div>
+  <div id="sidebar"></div>
+</div>
+
+<div id="print-area"></div>
+<div id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+window.SEED_DATA = {"meta":{},"categories":[{"id":"cat-alimentation","nom":"Dépenses courantes","type":"variable"},{"id":"cat-frais-habitation","nom":"Frais habitation","type":"fixe"},{"id":"cat-abonnements","nom":"Abonnements","type":"fixe"},{"id":"cat-cadeaux-et-dons","nom":"Cadeaux et dons","type":"fixe"},{"id":"cat-assurances-et-autres","nom":"Assurances et autres","type":"fixe"},{"id":"cat-mobiles","nom":"Mobiles","type":"fixe"},{"id":"cat-remboursements-cic","nom":"Remboursements CIC","type":"fixe"},{"id":"cat-impots","nom":"Impôts","type":"fixe"},{"id":"cat-depenses-diverses","nom":"Dépenses diverses","type":"fixe"}],"months":{"2026-08":{"id":"2026-08","label":"Août 2026","recettes":[{"id":"rec-2026-08-0","nom":"RETRAITE B","montant":1063,"paid":true},{"id":"rec-2026-08-1","nom":"RETRAITE MF","montant":1093,"paid":true},{"id":"rec-2026-08-2","nom":"RENTE AT","montant":0,"paid":true},{"id":"rec-2026-08-3","nom":"ARRCO 2","montant":99,"paid":true},{"id":"rec-2026-08-4","nom":"BTP/B","montant":635,"paid":true},{"id":"rec-2026-08-5","nom":"A.REUNICA","montant":140,"paid":true},{"id":"rec-2026-08-6","nom":"BTP/MF","montant":550,"paid":true},{"id":"rec-2026-08-7","nom":"AGIRC","montant":207,"paid":true}],"charges":[{"id":"ch-2026-08-cat-frais-habitation-0","categoryId":"cat-frais-habitation","nom":"Total Energie gaz","prevu":106,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-frais-habitation-3","categoryId":"cat-frais-habitation","nom":"Total Energie éléctricite","prevu":69,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-frais-habitation-1","categoryId":"cat-frais-habitation","nom":"Free","prevu":40,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-frais-habitation-2","categoryId":"cat-frais-habitation","nom":"Eau","prevu":61,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-frais-habitation-4","categoryId":"cat-frais-habitation","nom":"Home service","prevu":0,"type":"fixe"},{"id":"ch-2026-08-cat-abonnements-0","categoryId":"cat-abonnements","nom":"coyote","prevu":15,"type":"fixe"},{"id":"ch-2026-08-cat-abonnements-1","categoryId":"cat-abonnements","nom":"Apple","prevu":1,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-abonnements-2","categoryId":"cat-abonnements","nom":"Apple","prevu":2,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-cadeaux-et-dons-0","categoryId":"cat-cadeaux-et-dons","nom":"MARION","prevu":300,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-cadeaux-et-dons-1","categoryId":"cat-cadeaux-et-dons","nom":"Paray le monial","prevu":15,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-cadeaux-et-dons-2","categoryId":"cat-cadeaux-et-dons","nom":"Lourdes","prevu":15,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-cadeaux-et-dons-3","categoryId":"cat-cadeaux-et-dons","nom":"Denier du culte","prevu":10,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-cadeaux-et-dons-4","categoryId":"cat-cadeaux-et-dons","nom":"Jour du Seigneur","prevu":10,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-assurances-et-autres-0","categoryId":"cat-assurances-et-autres","nom":"Mutuelle","prevu":106,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-assurances-et-autres-1","categoryId":"cat-assurances-et-autres","nom":"Cotisation Esprit libre","prevu":10,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-alimentation-0","categoryId":"cat-alimentation","nom":"Courses","prevu":700,"type":"variable"},{"id":"ch-2026-08-cat-mobiles-0","categoryId":"cat-mobiles","nom":"mobile B","prevu":2,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-mobiles-1","categoryId":"cat-mobiles","nom":"mobile MF","prevu":10,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-remboursements-cic-0","categoryId":"cat-remboursements-cic","nom":"Assurances C3 CIC","prevu":52,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-remboursements-cic-1","categoryId":"cat-remboursements-cic","nom":"Assurance maison CIC","prevu":51,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-impots-0","categoryId":"cat-impots","nom":"Impôts fonciers","prevu":127,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-impots-1","categoryId":"cat-impots","nom":"Impots Foncier Marion","prevu":97,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-impots-2","categoryId":"cat-impots","nom":"Véronique pret","prevu":200,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-depenses-diverses-0","categoryId":"cat-depenses-diverses","nom":"Bernard","prevu":50,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-depenses-diverses-1","categoryId":"cat-depenses-diverses","nom":"Livret A MF+B","prevu":100,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-depenses-diverses-2","categoryId":"cat-abonnements","nom":"Verisure","prevu":60,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-depenses-diverses-3","categoryId":"cat-abonnements","nom":"sport MARION","prevu":35,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-depenses-diverses-4","categoryId":"cat-abonnements","nom":"Sport Veronique","prevu":35,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-depenses-diverses-5","categoryId":"cat-depenses-diverses","nom":"Agora 127/3","prevu":42,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-depenses-diverses-6","categoryId":"cat-depenses-diverses","nom":"Agora 129/3","prevu":43,"type":"fixe","paid":true},{"id":"ch-2026-08-cat-depenses-diverses-8","categoryId":"cat-depenses-diverses","nom":"Leroy Merlin 373,40 ( 2)","prevu":124,"type":"fixe","paid":true},{"id":"ch-mt4l59oz-pjvpw","categoryId":"cat-alimentation","nom":"Carburant","prevu":120,"type":"variable"},{"id":"ch-mt4l8hkv-tdt35","categoryId":"cat-alimentation","nom":"Achats internet","prevu":300,"type":"variable"},{"id":"ch-mt4mg73p-h934m","categoryId":"cat-alimentation","nom":"Eglise","prevu":0,"type":"variable"},{"id":"ch-mt4lzii1-8151i","categoryId":"cat-alimentation","nom":"Dépenses exceptionnelles","prevu":0,"type":"variable"}],"expenses":[{"id":"exp-mt4lqf0p-okg7j","chargeId":"ch-mt4l8hkv-tdt35","date":"2026-08-16","label":"AMAZON","montant":9.99,"paid":true},{"id":"exp-mt4lqvzu-hp8gb","chargeId":"ch-mt4l8hkv-tdt35","date":"2026-08-16","label":"AMAZON","montant":66.99,"paid":true},{"id":"exp-mt4lvww4-k625m","chargeId":"ch-2026-08-cat-alimentation-0","date":"2026-07-30","label":"AUCHAN","montant":1.74,"paid":true},{"id":"exp-mt4m1pdo-qws3m","chargeId":"ch-mt4lzii1-8151i","date":"2026-08-20","label":"RESTO TOULOUSE (1/3)","montant":40.34,"paid":true},{"id":"exp-mt4m2jog-ffea2","chargeId":"ch-mt4lzii1-8151i","date":"2026-07-30","label":"BISTRO BORDEAUX","montant":55.1,"paid":true},{"id":"exp-mt4mcxpv-wpmqx","chargeId":"ch-2026-08-cat-alimentation-0","date":"2026-08-17","label":"CARREFOUR","montant":6.14,"paid":true},{"id":"exp-mt4mdjky-0gmdu","chargeId":"ch-2026-08-cat-alimentation-0","date":"2026-08-17","label":"CARREFOUR","montant":54.14,"paid":true},{"id":"exp-mt4mjl0b-6mvel","chargeId":"ch-mt4mg73p-h934m","date":"2026-08-09","label":"quête","montant":5,"paid":true},{"id":"exp-mt4mka7r-a70l8","chargeId":"ch-2026-08-cat-alimentation-0","date":"2026-08-17","label":"CARREFOUR","montant":31.22,"paid":true},{"id":"exp-mt4ml9sv-sei01","chargeId":"ch-mt4l8hkv-tdt35","date":"2026-08-22","label":"TEMU","montant":35.7,"paid":true},{"id":"exp-mt4mm2c0-9w852","chargeId":"ch-mt4l8hkv-tdt35","date":"2026-08-19","label":"TEMU","montant":36.66,"paid":true},{"id":"exp-mt4mmpzs-e2jdn","chargeId":"ch-mt4lzii1-8151i","date":"2026-08-13","label":"COIFFEUR","montant":30.9,"paid":true},{"id":"exp-mt4mnqo9-0zqp9","chargeId":"ch-mt4l59oz-pjvpw","date":"2026-08-10","label":"SUPER U","montant":58.35,"paid":true},{"id":"exp-mt4mp5av-uvhec","chargeId":"ch-2026-08-cat-alimentation-0","date":"2026-08-10","label":"PHARMACIE","montant":27.34,"paid":true},{"id":"exp-mt4mqgpr-an8bw","chargeId":"ch-2026-08-cat-alimentation-0","date":"2026-08-08","label":"LECLERC","montant":89.27,"paid":true},{"id":"exp-mt4mr894-b2gmr","chargeId":"ch-2026-08-cat-alimentation-0","date":"2026-08-01","label":"INTERMARCHE","montant":65.82,"paid":true},{"id":"exp-mt4ms9i0-kzn59","chargeId":"ch-2026-08-cat-alimentation-0","date":"2026-07-31","label":"LECLERC","montant":19,"paid":true},{"id":"exp-mt4mt32q-bkawl","chargeId":"ch-2026-08-cat-alimentation-0","date":"2026-07-31","label":"LECLERC","montant":77.28,"paid":true},{"id":"exp-mt4mxdqm-g8qvv","chargeId":"ch-2026-08-cat-alimentation-0","date":"2026-07-30","label":"AUCHAN","montant":58.32,"paid":true},{"id":"exp-mt4n20di-kqyjm","chargeId":"ch-mt4lzii1-8151i","date":"2026-07-30","label":"LONGUEVILLE","montant":70,"paid":true},{"id":"exp-mt4nkq5x-l1hmt","chargeId":"ch-mt4l8hkv-tdt35","date":"2026-08-21","label":"AMAZON","montant":51.64}]},"2026-09":{"id":"2026-09","label":"Septembre 2026","recettes":[{"id":"rec-2026-09-0","nom":"RETRAITE B","montant":1063},{"id":"rec-2026-09-1","nom":"RETRAITE MF","montant":1093},{"id":"rec-2026-09-2","nom":"RENTE AT","montant":0},{"id":"rec-2026-09-3","nom":"ARRCO 2","montant":99},{"id":"rec-2026-09-4","nom":"BTP/B","montant":635},{"id":"rec-2026-09-5","nom":"A.REUNICA","montant":140},{"id":"rec-2026-09-6","nom":"BTP/MF","montant":550},{"id":"rec-2026-09-7","nom":"AGIRC","montant":207}],"charges":[{"id":"ch-2026-09-cat-frais-habitation-0","categoryId":"cat-frais-habitation","nom":"Total Energie gaz","prevu":106,"type":"fixe"},{"id":"ch-2026-09-cat-frais-habitation-1","categoryId":"cat-frais-habitation","nom":"Free","prevu":40,"type":"fixe"},{"id":"ch-2026-09-cat-frais-habitation-2","categoryId":"cat-frais-habitation","nom":"Eau","prevu":61,"type":"fixe"},{"id":"ch-2026-09-cat-frais-habitation-3","categoryId":"cat-frais-habitation","nom":"Total Energie éléctricite","prevu":69,"type":"fixe"},{"id":"ch-2026-09-cat-frais-habitation-4","categoryId":"cat-frais-habitation","nom":"Home service","prevu":41,"type":"fixe"},{"id":"ch-2026-09-cat-abonnements-0","categoryId":"cat-abonnements","nom":"coyote","prevu":15,"type":"fixe"},{"id":"ch-2026-09-cat-abonnements-1","categoryId":"cat-abonnements","nom":"Appel","prevu":1,"type":"fixe"},{"id":"ch-2026-09-cat-abonnements-2","categoryId":"cat-abonnements","nom":"Appel","prevu":2,"type":"fixe"},{"id":"ch-2026-09-cat-cadeaux-et-dons-0","categoryId":"cat-cadeaux-et-dons","nom":"MARION","prevu":300,"type":"fixe"},{"id":"ch-2026-09-cat-cadeaux-et-dons-1","categoryId":"cat-cadeaux-et-dons","nom":"Paray le monial","prevu":15,"type":"fixe"},{"id":"ch-2026-09-cat-cadeaux-et-dons-2","categoryId":"cat-cadeaux-et-dons","nom":"Lourdes","prevu":15,"type":"fixe"},{"id":"ch-2026-09-cat-cadeaux-et-dons-3","categoryId":"cat-cadeaux-et-dons","nom":"Denier du culte","prevu":10,"type":"fixe"},{"id":"ch-2026-09-cat-cadeaux-et-dons-4","categoryId":"cat-cadeaux-et-dons","nom":"Jour du Seigneur","prevu":10,"type":"fixe"},{"id":"ch-2026-09-cat-assurances-et-autres-0","categoryId":"cat-assurances-et-autres","nom":"Mutuelle","prevu":106,"type":"fixe"},{"id":"ch-2026-09-cat-assurances-et-autres-1","categoryId":"cat-assurances-et-autres","nom":"Cotisation Esprit libre","prevu":10,"type":"fixe"},{"id":"ch-2026-09-cat-alimentation-0","categoryId":"cat-alimentation","nom":"Courses","prevu":700,"type":"variable"},{"id":"ch-2026-09-cat-mobiles-0","categoryId":"cat-mobiles","nom":"mobile B","prevu":2,"type":"fixe"},{"id":"ch-2026-09-cat-mobiles-1","categoryId":"cat-mobiles","nom":"mobile MF","prevu":10,"type":"fixe"},{"id":"ch-2026-09-cat-remboursements-cic-0","categoryId":"cat-remboursements-cic","nom":"Assurances C3 CIC","prevu":56,"type":"fixe"},{"id":"ch-2026-09-cat-remboursements-cic-1","categoryId":"cat-remboursements-cic","nom":"Assurance maison CIC","prevu":51,"type":"fixe"},{"id":"ch-2026-09-cat-impots-0","categoryId":"cat-impots","nom":"Impots","prevu":117,"type":"fixe"},{"id":"ch-2026-09-cat-impots-1","categoryId":"cat-impots","nom":"Impôts fonciers","prevu":127,"type":"fixe"},{"id":"ch-2026-09-cat-impots-2","categoryId":"cat-impots","nom":"Impots Foncier Marion","prevu":97,"type":"fixe"},{"id":"ch-2026-09-cat-impots-3","categoryId":"cat-impots","nom":"Véronique pret","prevu":200,"type":"fixe"},{"id":"ch-2026-09-cat-impots-4","categoryId":"cat-impots","nom":"Frère Paul","prevu":5.99,"type":"fixe"},{"id":"ch-2026-09-cat-depenses-diverses-0","categoryId":"cat-depenses-diverses","nom":"Bernard","prevu":50,"type":"fixe"},{"id":"ch-2026-09-cat-depenses-diverses-1","categoryId":"cat-depenses-diverses","nom":"Livret A MF+B","prevu":100,"type":"fixe"},{"id":"ch-2026-09-cat-depenses-diverses-2","categoryId":"cat-abonnements","nom":"Verisure","prevu":60,"type":"fixe"},{"id":"ch-2026-09-cat-depenses-diverses-3","categoryId":"cat-depenses-diverses","nom":"Agora 127/3","prevu":42,"type":"fixe"},{"id":"ch-2026-09-cat-depenses-diverses-4","categoryId":"cat-depenses-diverses","nom":"Agora 129/3","prevu":43,"type":"fixe"},{"id":"ch-2026-09-cat-depenses-diverses-6","categoryId":"cat-depenses-diverses","nom":"Leroy Merlin 373,40(3)","prevu":124,"type":"fixe"},{"id":"ch-2026-09-cat-depenses-diverses-7","categoryId":"cat-depenses-diverses","nom":"leclerc 126,29/3","prevu":42,"type":"fixe"},{"id":"ch-2026-09-cat-depenses-diverses-8","categoryId":"cat-depenses-diverses","nom":"ND de Montligeon 200/3","prevu":67,"type":"fixe"},{"id":"ch-mt4l6q8m-7whqg","categoryId":"cat-alimentation","nom":"Carburant","prevu":120,"type":"variable"},{"id":"ch-mt4l8pl7-h68yw","categoryId":"cat-alimentation","nom":"Achats internet","prevu":300,"type":"variable"},{"id":"ch-mt4mh39b-mjni0","categoryId":"cat-alimentation","nom":"Eglise","prevu":0,"type":"variable"},{"id":"ch-mt4m50g8-5q4cq","categoryId":"cat-alimentation","nom":"Dépenses exceptionnelles","prevu":0,"type":"variable"}],"expenses":[{"id":"exp-mt4m6pev-mejov","chargeId":"ch-mt4m50g8-5q4cq","date":"2026-09-21","label":"RESTO TOULOUSE (2/3)","montant":40.33}]},"2026-10":{"id":"2026-10","label":"Octobre 2026","recettes":[{"id":"rec-2026-10-0","nom":"RETRAITE B","montant":1063},{"id":"rec-2026-10-1","nom":"RETRAITE MF","montant":1093},{"id":"rec-2026-10-2","nom":"RENTE AT","montant":2300},{"id":"rec-2026-10-3","nom":"ARRCO 2","montant":99},{"id":"rec-2026-10-4","nom":"BTP/B","montant":635},{"id":"rec-2026-10-5","nom":"A.REUNICA","montant":140},{"id":"rec-2026-10-6","nom":"BTP/MF","montant":550},{"id":"rec-2026-10-7","nom":"AGIRC","montant":207}],"charges":[{"id":"ch-2026-10-cat-frais-habitation-0","categoryId":"cat-frais-habitation","nom":"Total Energie gaz","prevu":106,"type":"fixe"},{"id":"ch-2026-10-cat-frais-habitation-1","categoryId":"cat-frais-habitation","nom":"Free","prevu":40,"type":"fixe"},{"id":"ch-2026-10-cat-frais-habitation-2","categoryId":"cat-frais-habitation","nom":"Eau","prevu":61,"type":"fixe"},{"id":"ch-2026-10-cat-frais-habitation-3","categoryId":"cat-frais-habitation","nom":"Total Energie éléctricite","prevu":69,"type":"fixe"},{"id":"ch-2026-10-cat-frais-habitation-4","categoryId":"cat-frais-habitation","nom":"Home service","prevu":0,"type":"fixe"},{"id":"ch-2026-10-cat-abonnements-0","categoryId":"cat-abonnements","nom":"coyote","prevu":15,"type":"fixe"},{"id":"ch-2026-10-cat-abonnements-1","categoryId":"cat-abonnements","nom":"Appel","prevu":1,"type":"fixe"},{"id":"ch-2026-10-cat-abonnements-2","categoryId":"cat-abonnements","nom":"Appel","prevu":2,"type":"fixe"},{"id":"ch-2026-10-cat-cadeaux-et-dons-0","categoryId":"cat-cadeaux-et-dons","nom":"MARION","prevu":300,"type":"fixe"},{"id":"ch-2026-10-cat-cadeaux-et-dons-1","categoryId":"cat-cadeaux-et-dons","nom":"Paray le monial","prevu":15,"type":"fixe"},{"id":"ch-2026-10-cat-cadeaux-et-dons-2","categoryId":"cat-cadeaux-et-dons","nom":"Lourdes","prevu":15,"type":"fixe"},{"id":"ch-2026-10-cat-cadeaux-et-dons-3","categoryId":"cat-cadeaux-et-dons","nom":"Denier du culte","prevu":10,"type":"fixe"},{"id":"ch-2026-10-cat-cadeaux-et-dons-4","categoryId":"cat-cadeaux-et-dons","nom":"Jour du Seigneur","prevu":10,"type":"fixe"},{"id":"ch-2026-10-cat-assurances-et-autres-0","categoryId":"cat-assurances-et-autres","nom":"Mutuelle","prevu":106,"type":"fixe"},{"id":"ch-2026-10-cat-assurances-et-autres-1","categoryId":"cat-assurances-et-autres","nom":"Cotisation Esprit libre","prevu":10,"type":"fixe"},{"id":"ch-2026-10-cat-alimentation-0","categoryId":"cat-alimentation","nom":"Courses","prevu":700,"type":"variable"},{"id":"ch-2026-10-cat-mobiles-0","categoryId":"cat-mobiles","nom":"mobile B","prevu":2,"type":"fixe"},{"id":"ch-2026-10-cat-mobiles-1","categoryId":"cat-mobiles","nom":"mobile MF","prevu":10,"type":"fixe"},{"id":"ch-2026-10-cat-remboursements-cic-0","categoryId":"cat-remboursements-cic","nom":"Assurances C3 CIC","prevu":56,"type":"fixe"},{"id":"ch-2026-10-cat-remboursements-cic-1","categoryId":"cat-remboursements-cic","nom":"Assurance maison CIC","prevu":51,"type":"fixe"},{"id":"ch-2026-10-cat-impots-0","categoryId":"cat-impots","nom":"Impots","prevu":117,"type":"fixe"},{"id":"ch-2026-10-cat-impots-1","categoryId":"cat-impots","nom":"Impôts fonciers","prevu":127,"type":"fixe"},{"id":"ch-2026-10-cat-impots-2","categoryId":"cat-impots","nom":"Impots Foncier Marion","prevu":97,"type":"fixe"},{"id":"ch-2026-10-cat-impots-3","categoryId":"cat-impots","nom":"Véronique pret","prevu":200,"type":"fixe"},{"id":"ch-2026-10-cat-impots-4","categoryId":"cat-impots","nom":"Frère Paul","prevu":5.99,"type":"fixe"},{"id":"ch-2026-10-cat-depenses-diverses-0","categoryId":"cat-depenses-diverses","nom":"Bernard","prevu":50,"type":"fixe"},{"id":"ch-2026-10-cat-depenses-diverses-1","categoryId":"cat-depenses-diverses","nom":"Livret A MF+B","prevu":100,"type":"fixe"},{"id":"ch-2026-10-cat-depenses-diverses-2","categoryId":"cat-abonnements","nom":"Verisure","prevu":60,"type":"fixe"},{"id":"ch-2026-10-cat-depenses-diverses-3","categoryId":"cat-depenses-diverses","nom":"leclerc 126,29/3","prevu":42,"type":"fixe"},{"id":"ch-2026-10-cat-depenses-diverses-4","categoryId":"cat-depenses-diverses","nom":"Agora 127/3","prevu":42,"type":"fixe"},{"id":"ch-2026-10-cat-depenses-diverses-5","categoryId":"cat-depenses-diverses","nom":"Agora 129/3","prevu":43,"type":"fixe"},{"id":"ch-2026-10-cat-depenses-diverses-6","categoryId":"cat-depenses-diverses","nom":"resto Toulouse 121/3","prevu":40,"type":"fixe"},{"id":"ch-2026-10-cat-depenses-diverses-7","categoryId":"cat-depenses-diverses","nom":"ND de Montligeon","prevu":67,"type":"fixe"},{"id":"ch-mt4l73gc-d3bo0","categoryId":"cat-alimentation","nom":"Carburant","prevu":120,"type":"variable"},{"id":"ch-mt4l8t4w-3fw67","categoryId":"cat-alimentation","nom":"Achats internet","prevu":300,"type":"variable"},{"id":"ch-mt4mhqjt-60p78","categoryId":"cat-alimentation","nom":"Eglise","prevu":0,"type":"variable"},{"id":"ch-mt4m4x76-fhsc7","categoryId":"cat-alimentation","nom":"Dépenses exceptionnelles","prevu":0,"type":"variable"}],"expenses":[{"id":"exp-mt4m8aon-norqn","chargeId":"ch-mt4m4x76-fhsc7","date":"2026-10-16","label":"RESTO TOULOUSE (3/3)","montant":40.33}]},"2026-11":{"id":"2026-11","label":"Novembre 2026","recettes":[{"id":"rec-2026-11-0","nom":"RETRAITE B","montant":1063},{"id":"rec-2026-11-1","nom":"RETRAITE MF","montant":1093},{"id":"rec-2026-11-2","nom":"RENTE AT","montant":0},{"id":"rec-2026-11-3","nom":"ARRCO 2","montant":99},{"id":"rec-2026-11-4","nom":"BTP/B","montant":635},{"id":"rec-2026-11-5","nom":"A.REUNICA","montant":140},{"id":"rec-2026-11-6","nom":"BTP/MF","montant":550},{"id":"rec-2026-11-7","nom":"AGIRC","montant":207}],"charges":[{"id":"ch-2026-11-cat-frais-habitation-0","categoryId":"cat-frais-habitation","nom":"Total Energie gaz","prevu":106,"type":"fixe"},{"id":"ch-2026-11-cat-frais-habitation-1","categoryId":"cat-frais-habitation","nom":"Free","prevu":40,"type":"fixe"},{"id":"ch-2026-11-cat-frais-habitation-2","categoryId":"cat-frais-habitation","nom":"Eau","prevu":61,"type":"fixe"},{"id":"ch-2026-11-cat-frais-habitation-3","categoryId":"cat-frais-habitation","nom":"Total Energie éléctricite","prevu":69,"type":"fixe"},{"id":"ch-2026-11-cat-frais-habitation-4","categoryId":"cat-frais-habitation","nom":"Home service","prevu":0,"type":"fixe"},{"id":"ch-2026-11-cat-abonnements-0","categoryId":"cat-abonnements","nom":"coyote","prevu":15,"type":"fixe"},{"id":"ch-2026-11-cat-abonnements-1","categoryId":"cat-abonnements","nom":"Appel","prevu":1,"type":"fixe"},{"id":"ch-2026-11-cat-abonnements-2","categoryId":"cat-abonnements","nom":"Appel","prevu":2,"type":"fixe"},{"id":"ch-2026-11-cat-cadeaux-et-dons-0","categoryId":"cat-cadeaux-et-dons","nom":"MARION","prevu":300,"type":"fixe"},{"id":"ch-2026-11-cat-cadeaux-et-dons-1","categoryId":"cat-cadeaux-et-dons","nom":"Paray le monial","prevu":15,"type":"fixe"},{"id":"ch-2026-11-cat-cadeaux-et-dons-2","categoryId":"cat-cadeaux-et-dons","nom":"Lourdes","prevu":15,"type":"fixe"},{"id":"ch-2026-11-cat-cadeaux-et-dons-3","categoryId":"cat-cadeaux-et-dons","nom":"Denier du culte","prevu":10,"type":"fixe"},{"id":"ch-2026-11-cat-cadeaux-et-dons-4","categoryId":"cat-cadeaux-et-dons","nom":"Jour du Seigneur","prevu":10,"type":"fixe"},{"id":"ch-2026-11-cat-assurances-et-autres-0","categoryId":"cat-assurances-et-autres","nom":"Mutuelle","prevu":106,"type":"fixe"},{"id":"ch-2026-11-cat-assurances-et-autres-1","categoryId":"cat-assurances-et-autres","nom":"Cotisation Esprit libre","prevu":10,"type":"fixe"},{"id":"ch-2026-11-cat-alimentation-0","categoryId":"cat-alimentation","nom":"Courses","prevu":700,"type":"variable"},{"id":"ch-2026-11-cat-mobiles-0","categoryId":"cat-mobiles","nom":"mobile B","prevu":2,"type":"fixe"},{"id":"ch-2026-11-cat-mobiles-1","categoryId":"cat-mobiles","nom":"mobile MF","prevu":10,"type":"fixe"},{"id":"ch-2026-11-cat-remboursements-cic-0","categoryId":"cat-remboursements-cic","nom":"Assurances C3 CIC","prevu":56,"type":"fixe"},{"id":"ch-2026-11-cat-remboursements-cic-1","categoryId":"cat-remboursements-cic","nom":"Assurance maison CIC","prevu":51,"type":"fixe"},{"id":"ch-2026-11-cat-impots-0","categoryId":"cat-impots","nom":"Impots","prevu":117,"type":"fixe"},{"id":"ch-2026-11-cat-impots-1","categoryId":"cat-impots","nom":"Impôts fonciers","prevu":127,"type":"fixe"},{"id":"ch-2026-11-cat-impots-2","categoryId":"cat-impots","nom":"Impots Foncier Marion","prevu":97,"type":"fixe"},{"id":"ch-2026-11-cat-impots-3","categoryId":"cat-impots","nom":"Véronique pret","prevu":200,"type":"fixe"},{"id":"ch-2026-11-cat-impots-4","categoryId":"cat-impots","nom":"Frère Paul","prevu":5.99,"type":"fixe"},{"id":"ch-2026-11-cat-depenses-diverses-0","categoryId":"cat-depenses-diverses","nom":"Bernard","prevu":50,"type":"fixe"},{"id":"ch-2026-11-cat-depenses-diverses-1","categoryId":"cat-depenses-diverses","nom":"Livret A MF+B","prevu":100,"type":"fixe"},{"id":"ch-2026-11-cat-depenses-diverses-2","categoryId":"cat-abonnements","nom":"Verisure","prevu":60,"type":"fixe"},{"id":"ch-2026-11-cat-depenses-diverses-3","categoryId":"cat-depenses-diverses","nom":"leclerc 126,29/3","prevu":42,"type":"fixe"},{"id":"ch-2026-11-cat-depenses-diverses-4","categoryId":"cat-depenses-diverses","nom":"Agora 129/3","prevu":43,"type":"fixe"},{"id":"ch-2026-11-cat-depenses-diverses-5","categoryId":"cat-depenses-diverses","nom":"ND de Montligeon 200/3","prevu":67,"type":"fixe"},{"id":"ch-mt4l7nmc-mo5lq","categoryId":"cat-alimentation","nom":"Carburant","prevu":120,"type":"variable"},{"id":"ch-mt4l8vgl-mey6t","categoryId":"cat-alimentation","nom":"Achats internet","prevu":300,"type":"variable"},{"id":"ch-mt4mi6ty-tzetz","categoryId":"cat-alimentation","nom":"Eglise","prevu":0,"type":"variable"},{"id":"ch-mt4m4u38-7sztx","categoryId":"cat-alimentation","nom":"Dépenses exceptionnelles","prevu":0,"type":"variable"}],"expenses":[]},"2026-12":{"id":"2026-12","label":"Décembre 2026","recettes":[{"id":"rec-2026-12-0","nom":"RETRAITE B","montant":1063},{"id":"rec-2026-12-1","nom":"RETRAITE MF","montant":1093},{"id":"rec-2026-12-2","nom":"RENTE AT","montant":0},{"id":"rec-2026-12-3","nom":"ARRCO 2","montant":99},{"id":"rec-2026-12-4","nom":"BTP/B","montant":635},{"id":"rec-2026-12-5","nom":"A.REUNICA","montant":140},{"id":"rec-2026-12-6","nom":"BTP/MF","montant":550},{"id":"rec-2026-12-7","nom":"AGIRC","montant":207}],"charges":[{"id":"ch-2026-12-cat-frais-habitation-0","categoryId":"cat-frais-habitation","nom":"Total Energie gaz","prevu":106,"type":"fixe"},{"id":"ch-2026-12-cat-frais-habitation-1","categoryId":"cat-frais-habitation","nom":"Free","prevu":40,"type":"fixe"},{"id":"ch-2026-12-cat-frais-habitation-2","categoryId":"cat-frais-habitation","nom":"Eau","prevu":61,"type":"fixe"},{"id":"ch-2026-12-cat-frais-habitation-3","categoryId":"cat-frais-habitation","nom":"Total Energie éléctricite","prevu":69,"type":"fixe"},{"id":"ch-2026-12-cat-frais-habitation-4","categoryId":"cat-frais-habitation","nom":"Home service","prevu":41,"type":"fixe"},{"id":"ch-2026-12-cat-abonnements-0","categoryId":"cat-abonnements","nom":"coyote","prevu":15,"type":"fixe"},{"id":"ch-2026-12-cat-abonnements-1","categoryId":"cat-abonnements","nom":"Appel","prevu":1,"type":"fixe"},{"id":"ch-2026-12-cat-abonnements-2","categoryId":"cat-abonnements","nom":"Appel","prevu":2,"type":"fixe"},{"id":"ch-2026-12-cat-cadeaux-et-dons-0","categoryId":"cat-cadeaux-et-dons","nom":"MARION","prevu":300,"type":"fixe"},{"id":"ch-2026-12-cat-cadeaux-et-dons-1","categoryId":"cat-cadeaux-et-dons","nom":"Paray le monial","prevu":15,"type":"fixe"},{"id":"ch-2026-12-cat-cadeaux-et-dons-2","categoryId":"cat-cadeaux-et-dons","nom":"Lourdes","prevu":15,"type":"fixe"},{"id":"ch-2026-12-cat-cadeaux-et-dons-3","categoryId":"cat-cadeaux-et-dons","nom":"Denier du culte","prevu":10,"type":"fixe"},{"id":"ch-2026-12-cat-cadeaux-et-dons-4","categoryId":"cat-cadeaux-et-dons","nom":"Jour du Seigneur","prevu":10,"type":"fixe"},{"id":"ch-2026-12-cat-assurances-et-autres-0","categoryId":"cat-assurances-et-autres","nom":"Mutuelle","prevu":106,"type":"fixe"},{"id":"ch-2026-12-cat-assurances-et-autres-1","categoryId":"cat-assurances-et-autres","nom":"Cotisation Esprit libre","prevu":10,"type":"fixe"},{"id":"ch-2026-12-cat-alimentation-0","categoryId":"cat-alimentation","nom":"Courses","prevu":700,"type":"variable"},{"id":"ch-2026-12-cat-mobiles-0","categoryId":"cat-mobiles","nom":"mobile B","prevu":2,"type":"fixe"},{"id":"ch-2026-12-cat-mobiles-1","categoryId":"cat-mobiles","nom":"mobile MF","prevu":10,"type":"fixe"},{"id":"ch-2026-12-cat-remboursements-cic-0","categoryId":"cat-remboursements-cic","nom":"Assurances C3 CIC","prevu":56,"type":"fixe"},{"id":"ch-2026-12-cat-remboursements-cic-1","categoryId":"cat-remboursements-cic","nom":"Assurance maison CIC","prevu":51,"type":"fixe"},{"id":"ch-2026-12-cat-impots-0","categoryId":"cat-impots","nom":"Impots","prevu":120,"type":"fixe"},{"id":"ch-2026-12-cat-impots-1","categoryId":"cat-impots","nom":"Impôts fonciers","prevu":127,"type":"fixe"},{"id":"ch-2026-12-cat-impots-2","categoryId":"cat-impots","nom":"Impots Foncier Marion","prevu":97,"type":"fixe"},{"id":"ch-2026-12-cat-impots-3","categoryId":"cat-impots","nom":"Véronique pret","prevu":200,"type":"fixe"},{"id":"ch-2026-12-cat-impots-4","categoryId":"cat-impots","nom":"Frère Paul","prevu":5.99,"type":"fixe"},{"id":"ch-2026-12-cat-depenses-diverses-0","categoryId":"cat-depenses-diverses","nom":"Bernard","prevu":50,"type":"fixe"},{"id":"ch-2026-12-cat-depenses-diverses-1","categoryId":"cat-depenses-diverses","nom":"Livret A MF+B","prevu":100,"type":"fixe"},{"id":"ch-2026-12-cat-depenses-diverses-2","categoryId":"cat-abonnements","nom":"Verisure","prevu":60,"type":"fixe"},{"id":"ch-mt4l82tq-r0sh8","categoryId":"cat-alimentation","nom":"Carburant","prevu":120,"type":"variable"},{"id":"ch-mt4l8xul-zqo1j","categoryId":"cat-alimentation","nom":"Achats internet","prevu":300,"type":"variable"},{"id":"ch-mt4migzn-azcpn","categoryId":"cat-alimentation","nom":"Eglise","prevu":0,"type":"variable"},{"id":"ch-mt4m4mek-33paz","categoryId":"cat-alimentation","nom":"Dépenses exceptionnelles","prevu":0,"type":"variable"}],"expenses":[]}},"currentMonthId":"2026-08","soldeBancaire":{"montant":931,"date":"2026-08-22"},"updatedAt":1787419932857,"veronique":{"entries":[]}};
+</script>
+<script>
+/* ============================================================
+   BUDGET DE MAMIE — application locale + sauvegarde automatique en ligne
+   ============================================================ */
+
+var STORAGE_KEY = 'budgetMamieState_v1';
+var MOIS_NOMS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+var state = null;
+var currentTab = 'mois';
+var viewingArchivedFrom = null; // mémorise qu'on est arrivé sur ce mois depuis les Archives
+
+/* ---------------- Sauvegarde en ligne (invisible, automatique) ---------------- */
+// Sert uniquement de filet de sécurité si la mémoire du navigateur est effacée
+// (nettoyage automatique, changement d'ordinateur, etc.) — aucune action requise.
+var CLOUD_CONFIG = {
+  apiKey: "AIzaSyAK8SWT9SM3BDBwpXN_oMZyHlzumjDJUtI",
+  authDomain: "budget-mamie.firebaseapp.com",
+  projectId: "budget-mamie",
+  storageBucket: "budget-mamie.firebasestorage.app",
+  messagingSenderId: "1095430374829",
+  appId: "1:1095430374829:web:1deba08819a423fcf2cd24"
+};
+var cloudDb = null;
+var cloudReady = false;      // le programme de sauvegarde s'est bien chargé
+var cloudConnected = null;   // null = pas encore vérifié, true/false = résultat d'un vrai essai
+var cloudPushTimer = null;
+var cloudLastError = null;
+
+function initCloud(){
+  try{
+    if(typeof firebase === 'undefined') return;
+    var app = firebase.initializeApp(CLOUD_CONFIG);
+    cloudDb = firebase.firestore(app);
+    cloudReady = true;
+  }catch(e){
+    console.error('Sauvegarde en ligne indisponible', e);
+  }
+}
+
+function cloudDocRef(){
+  return cloudDb.collection('budget').doc('etat');
+}
+
+// Au démarrage : on compare la donnée locale et la donnée en ligne, et on garde la plus récente.
+function cloudSyncOnStartup(){
+  if(!cloudReady) return;
+  cloudDocRef().get().then(function(snap){
+    cloudConnected = true;
+    cloudLastError = null;
+    if(!snap.exists){
+      cloudPush();
+      return;
+    }
+    var remote = snap.data();
+    if(!remote || !remote.payload) return;
+    try{
+      var remoteState = JSON.parse(remote.payload);
+      // Si cet appareil n'avait aucune donnée enregistrée localement (mémoire effacée,
+      // nouvel appareil...), la sauvegarde en ligne est forcément la plus fiable : on
+      // l'adopte systématiquement, sans se fier à une comparaison de date.
+      var shouldAdoptRemote = !stateFromLocalStorage || (remoteState.updatedAt||0) > (state.updatedAt||0);
+      if(shouldAdoptRemote){
+        state = remoteState;
+        try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+        stateFromLocalStorage = true;
+        render();
+      } else if((state.updatedAt||0) > (remoteState.updatedAt||0)){
+        cloudPush();
+      }
+    }catch(e){ console.error('Lecture sauvegarde en ligne impossible', e); }
+  }).catch(function(err){
+    cloudConnected = false;
+    cloudLastError = (err && err.message) ? err.message : String(err);
+    console.error('Sauvegarde en ligne inaccessible', err);
+  });
+}
+
+// Envoi (léger différé pour ne pas multiplier les écritures lors de saisies rapides).
+function cloudPush(){
+  if(!cloudReady) return;
+  clearTimeout(cloudPushTimer);
+  cloudPushTimer = setTimeout(function(){
+    try{
+      cloudDocRef().set({ payload: JSON.stringify(state), updatedAt: state.updatedAt||Date.now() })
+        .then(function(){ cloudConnected = true; cloudLastError = null; })
+        .catch(function(err){
+          cloudConnected = false;
+          cloudLastError = (err && err.message) ? err.message : String(err);
+          console.error('Envoi sauvegarde en ligne impossible', err);
+        });
+    }catch(e){
+      cloudConnected = false;
+      cloudLastError = (e && e.message) ? e.message : String(e);
+      console.error('Envoi sauvegarde en ligne impossible', e);
+    }
+  }, 600);
+}
+
+// Test manuel déclenché depuis les Réglages : fait un vrai aller-retour et rend un résultat clair.
+function cloudTestNow(callback){
+  if(!cloudReady){
+    callback(false, "Le programme de sauvegarde n'a pas pu se charger (bloqué par le réseau ou un logiciel de sécurité).");
+    return;
+  }
+  cloudDocRef().set({ payload: JSON.stringify(state), updatedAt: Date.now() })
+    .then(function(){
+      cloudConnected = true; cloudLastError = null;
+      callback(true, null);
+    })
+    .catch(function(err){
+      cloudConnected = false;
+      cloudLastError = (err && err.message) ? err.message : String(err);
+      callback(false, cloudLastError);
+    });
+}
+
+/* ---------------- Utilitaires ---------------- */
+function uid(prefix){ return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7); }
+function fmtEUR(n){
+  n = Number(n) || 0;
+  return n.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €';
+}
+function fmtDate(iso){
+  if(!iso) return '';
+  var d = new Date(iso);
+  if(isNaN(d)) return iso;
+  return d.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'numeric'});
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function showToast(msg, isError){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? '#B23A3A' : '#2E2A26';
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function(){ t.classList.remove('show'); }, 2800);
+}
+function monthLabel(monthId){
+  var parts = monthId.split('-');
+  var y = parts[0], m = parseInt(parts[1],10);
+  return MOIS_NOMS[m-1] + ' ' + y;
+}
+function nextMonthId(monthId){
+  var parts = monthId.split('-');
+  var y = parseInt(parts[0],10), m = parseInt(parts[1],10);
+  m += 1;
+  if(m > 12){ m = 1; y += 1; }
+  return y + '-' + String(m).padStart(2,'0');
+}
+function prevMonthId(monthId){
+  var parts = monthId.split('-');
+  var y = parseInt(parts[0],10), m = parseInt(parts[1],10);
+  m -= 1;
+  if(m < 1){ m = 12; y -= 1; }
+  return y + '-' + String(m).padStart(2,'0');
+}
+function sortedMonthIds(){
+  return Object.keys(state.months).sort();
+}
+function realCurrentMonthId(){
+  return todayISO().slice(0,7);
+}
+function isArchived(monthId){
+  return monthId < realCurrentMonthId();
+}
+function activeMonthIds(){
+  return sortedMonthIds().filter(function(id){ return !isArchived(id); });
+}
+function archivedMonthIds(){
+  return sortedMonthIds().filter(function(id){ return isArchived(id); });
+}
+
+/* ---------------- État : chargement / sauvegarde ---------------- */
+function defaultState(){
+  var seed = JSON.parse(JSON.stringify(window.SEED_DATA));
+  if(!seed.veronique) seed.veronique = { entries: [] };
+  if(!seed.meta) seed.meta = {};
+  if(!seed.soldeBancaire) seed.soldeBancaire = { montant: null, date: null };
+  var monthIds = Object.keys(seed.months).sort();
+  if(!seed.currentMonthId || !seed.months[seed.currentMonthId]){
+    seed.currentMonthId = monthIds[0] || todayISO().slice(0,7);
+  }
+  // Important : on garde l'horodatage d'origine des données de secours (ne surtout pas le
+  // remplacer par l'heure actuelle), sinon elles paraîtraient plus récentes que la vraie
+  // sauvegarde en ligne et risqueraient de l'écraser par erreur.
+  seed.updatedAt = seed.updatedAt || 0;
+  return seed;
+}
+
+var stateFromLocalStorage = false;
+
+function loadState(){
+  try{
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      state = JSON.parse(raw);
+      // On garde toujours ce qui est déjà enregistré sur cet appareil : une mise à jour de
+      // l'application ne doit jamais écraser silencieusement les données déjà saisies.
+      if(!state.categories) state = defaultState();
+      else stateFromLocalStorage = true;
+    } else {
+      state = defaultState();
+    }
+  }catch(e){
+    state = defaultState();
+  }
+  if(!state.months[state.currentMonthId]){
+    var ids = sortedMonthIds();
+    state.currentMonthId = ids.length ? ids[0] : todayISO().slice(0,7);
+  }
+  if(!state.veronique) state.veronique = { entries: [] };
+  if(!state.meta) state.meta = {};
+  // Au premier chargement, on affiche de préférence le mois réel en cours (ou le premier mois actif)
+  if(isArchived(state.currentMonthId)){
+    var act = activeMonthIds();
+    if(act.length) state.currentMonthId = act[0];
+  }
+}
+
+function saveState(){
+  state.updatedAt = Date.now();
+  stateFromLocalStorage = true;
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }catch(e){
+    console.error('Sauvegarde locale impossible', e);
+  }
+  cloudPush();
+}
+
+/* ---------------- Calculs ---------------- */
+function getMonth(monthId){ return state.months[monthId]; }
+
+function chargeReel(month, chargeId){
+  var sum = 0;
+  month.expenses.forEach(function(e){ if(e.chargeId === chargeId) sum += Number(e.montant)||0; });
+  return sum;
+}
+
+function monthTotals(monthId){
+  var month = getMonth(monthId);
+  if(!month) return null;
+  var totalRecettes = month.recettes.reduce(function(s,r){ return s + (Number(r.montant)||0); }, 0);
+  var byCat = {};
+  state.categories.forEach(function(c){ byCat[c.id] = { categorie:c, items:[], sousTotal:0 }; });
+  var totalCharges = 0;
+  month.charges.forEach(function(ch){
+    var bucket = byCat[ch.categoryId];
+    if(!bucket) return;
+    var prevu = Number(ch.prevu)||0;
+    var reel = ch.type === 'variable' ? chargeReel(month, ch.id) : prevu;
+    var reste = ch.type === 'variable' ? (prevu - reel) : 0;
+    bucket.items.push({ charge: ch, prevu: prevu, reel: reel, reste: reste });
+    bucket.sousTotal += prevu;
+    totalCharges += prevu;
+  });
+  var solde = totalRecettes - totalCharges;
+
+  // Montant des enveloppes variables non encore dépensées (reste à venir ce mois-ci)
+  var resteVariableAVenir = 0;
+  var totalVariableDepense = 0;
+  month.charges.forEach(function(ch){
+    if(ch.type === 'variable'){
+      var prevu = Number(ch.prevu)||0;
+      var reel = chargeReel(month, ch.id);
+      var reste = prevu - reel;
+      if(reste > 0) resteVariableAVenir += reste;
+      totalVariableDepense += reel;
+    }
+  });
+
+  return { totalRecettes: totalRecettes, totalCharges: totalCharges, solde: solde, byCat: byCat, resteVariableAVenir: resteVariableAVenir, totalVariableDepense: totalVariableDepense };
+}
+
+function allVariableCharges(monthId){
+  var month = getMonth(monthId);
+  var list = [];
+  month.charges.forEach(function(ch){
+    if(ch.type === 'variable'){
+      var cat = state.categories.find(function(c){ return c.id === ch.categoryId; });
+      list.push({ charge: ch, categorie: cat ? cat.nom : '', reel: chargeReel(month, ch.id) });
+    }
+  });
+  return list;
+}
+
+/* ---------------- Rendu général ---------------- */
+function render(){
+  renderTopbar();
+  renderSidebar();
+  var main = document.getElementById('main');
+  main.innerHTML = '';
+  renderTabBudget(main);
+}
+
+function renderTopbar(){
+  var monthTabsEl = document.getElementById('month-tabs');
+  var ids = activeMonthIds();
+  // Si le mois affiché est archivé (consulté depuis les Archives), on l'ajoute temporairement à la liste visible
+  if(isArchived(state.currentMonthId) && ids.indexOf(state.currentMonthId) === -1){
+    ids = [state.currentMonthId].concat(ids);
+  }
+  var html = '';
+  ids.forEach(function(mid){
+    var m = state.months[mid];
+    html += '<button class="month-tab-btn '+(mid===state.currentMonthId?'active':'')+'" data-month="'+mid+'">'+escapeHtml(m.label)+'</button>';
+  });
+  html += '<button class="month-tab-add" id="btn-new-month-tab">+ Nouveau mois</button>';
+  monthTabsEl.innerHTML = html;
+  monthTabsEl.style.display = 'flex';
+  monthTabsEl.querySelectorAll('.month-tab-btn').forEach(function(b){
+    b.onclick = function(){ state.currentMonthId = this.getAttribute('data-month'); saveState(); render(); };
+  });
+  document.getElementById('btn-new-month-tab').onclick = function(){
+    var ids2 = sortedMonthIds();
+    var nid = nextMonthId(ids2[ids2.length-1]);
+    openConfirm('Créer '+monthLabel(nid)+' ?', 'Les recettes et les charges du dernier mois seront reprises à l\'identique. Tu pourras ensuite les ajuster.', function(){
+      createNewMonth();
+      render();
+    });
+  };
+
+  document.getElementById('btn-open-archives').onclick = openArchivesModal;
+  document.getElementById('btn-open-settings').onclick = openSettingsModal;
+}
+
+/* ---------------- Sidebar : solde bancaire ---------------- */
+function computeSoldeProjection(monthId){
+  var month = getMonth(monthId);
+  var uncheckedDetailExpenses = 0;
+  month.expenses.forEach(function(e){ if(!e.paid) uncheckedDetailExpenses += Number(e.montant)||0; });
+  var uncheckedFixedCharges = 0;
+  var resteVariablePrevisionnel = 0;
+  month.charges.forEach(function(ch){
+    if(ch.type === 'fixe'){
+      if(!ch.paid) uncheckedFixedCharges += Number(ch.prevu)||0;
+    } else {
+      var reel = chargeReel(month, ch.id);
+      var reste = (Number(ch.prevu)||0) - reel;
+      resteVariablePrevisionnel += reste;
+    }
+  });
+  var totalADeduire = uncheckedDetailExpenses + uncheckedFixedCharges + resteVariablePrevisionnel;
+  return {
+    uncheckedDetailExpenses: uncheckedDetailExpenses,
+    uncheckedFixedCharges: uncheckedFixedCharges,
+    resteVariablePrevisionnel: resteVariablePrevisionnel,
+    totalADeduire: totalADeduire
+  };
+}
+
+function veroniqueBalance(){
+  var solde = 0;
+  (state.veronique.entries || []).forEach(function(e){
+    if(e.settled) return;
+    solde += (e.direction === 'doit_a_mamie') ? Number(e.montant)||0 : -(Number(e.montant)||0);
+  });
+  return solde;
+}
+
+function renderSidebar(){
+  var sb = document.getElementById('sidebar');
+  var monthId = state.currentMonthId;
+  var proj = computeSoldeProjection(monthId);
+  var montant = state.soldeBancaire.montant;
+  var reste = (montant !== null && montant !== undefined) ? (montant - proj.totalADeduire) : null;
+
+  var html = '';
+  html += '<div class="card" id="solde-card">';
+  html += '<div class="card-head"><h2>💰 Solde bancaire</h2></div>';
+  html += '<div class="field"><label>Solde actuel du compte</label>';
+  html += '<input type="number" step="0.01" id="input-solde" placeholder="Ex : 2450.00" value="'+(montant!==null&&montant!==undefined?montant:'')+'"></div>';
+  if(state.soldeBancaire.date){
+    html += '<div class="muted">Mis à jour le '+fmtDate(state.soldeBancaire.date)+'</div>';
+  }
+  html += '<button id="btn-save-solde" style="margin-top:8px;width:100%;">Enregistrer</button>';
+
+  if(reste !== null){
+    html += '<div style="margin-top:16px;">';
+    html += '<div class="apercu-row"><span>Dépenses courantes non cochées</span><span class="amount">'+fmtEUR(proj.uncheckedDetailExpenses)+'</span></div>';
+    html += '<div class="apercu-row"><span>Charges non cochées</span><span class="amount">'+fmtEUR(proj.uncheckedFixedCharges)+'</span></div>';
+    html += '<div class="apercu-row"><span>Reste prévisionnel (courses, etc.)</span><span class="amount '+(proj.resteVariablePrevisionnel<0?'neg':'')+'">'+fmtEUR(proj.resteVariablePrevisionnel)+'</span></div>';
+    html += '<div id="solde-reste" style="color:'+(reste>=0?'#3F7D4F':'#B23A3A')+';margin-top:10px;">'+fmtEUR(reste)+'</div>';
+    html += '<div class="muted">solde une fois tout déduit.</div>';
+    html += '</div>';
+  } else {
+    html += '<div class="muted" style="margin-top:12px;">Renseigne le solde du compte pour voir ce montant.</div>';
+  }
+  html += '</div>';
+
+  // Compte avec Véronique
+  var vSolde = veroniqueBalance();
+  html += '<div class="card">';
+  html += '<div class="card-head"><h2>👩‍👧 Véronique</h2></div>';
+  if(vSolde === 0){
+    html += '<div class="muted">Aucun compte en cours.</div>';
+  } else if(vSolde > 0){
+    html += '<div style="font-size:19px;font-weight:800;color:#3F7D4F;">Véronique te doit '+fmtEUR(vSolde)+'</div>';
+  } else {
+    html += '<div style="font-size:19px;font-weight:800;color:#B23A3A;">Tu dois '+fmtEUR(Math.abs(vSolde))+' à Véronique</div>';
+  }
+  html += '<button class="secondary" id="btn-open-veronique" style="margin-top:10px;width:100%;">Gérer le compte</button>';
+  html += '</div>';
+
+  sb.innerHTML = html;
+
+  document.getElementById('btn-save-solde').onclick = function(){
+    var val = document.getElementById('input-solde').value;
+    state.soldeBancaire.montant = val === '' ? null : parseFloat(val);
+    state.soldeBancaire.date = todayISO();
+    saveState();
+    render();
+    showToast('Solde enregistré.');
+  };
+  document.getElementById('btn-open-veronique').onclick = openVeroniqueModal;
+}
+
+function escapeHtml(s){
+  if(s === undefined || s === null) return '';
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+/* ---------------- Onglet : Budget (mois sélectionné) ---------------- */
+function renderTabBudget(main){
+  var monthId = state.currentMonthId;
+  var html = '';
+  if(isArchived(monthId)){
+    html += '<div class="archived-banner">🗄️ Mois archivé — <span id="btn-back-to-current" style="text-decoration:underline;cursor:pointer;">revenir au mois en cours</span></div>';
+  }
+  main.innerHTML = html;
+  var wrap = document.createElement('div');
+  main.appendChild(wrap);
+  renderMonthDetail(wrap, monthId);
+
+  var backBtn = document.getElementById('btn-back-to-current');
+  if(backBtn){
+    backBtn.onclick = function(){
+      var ids = activeMonthIds();
+      state.currentMonthId = ids.length ? ids[0] : realCurrentMonthId();
+      saveState(); render();
+    };
+  }
+}
+
+function renderMonthDetail(main, monthId){
+  var month = getMonth(monthId);
+  var t = monthTotals(monthId);
+
+  var html = '';
+
+  // RECETTES
+  html += '<div class="card">';
+  html += '<div class="card-head"><h2>💵 Recettes</h2><button class="btn-highlight small" id="btn-add-recette">+ Ajouter une recette</button></div>';
+  if(month.recettes.length === 0){
+    html += '<div class="empty-hint">Aucune recette pour le moment.</div>';
+  } else {
+    html += '<div class="table-scroll"><table class="line-table"><thead><tr><th>Nom</th><th class="amt-col">Montant</th><th class="row-check"></th><th></th></tr></thead><tbody>';
+    month.recettes.forEach(function(r){
+      html += '<tr data-id="'+r.id+'" class="'+(r.paid?'line-checked':'')+'">';
+      html += '<td>'+escapeHtml(r.nom)+'</td>';
+      html += '<td class="amt-col amount pos">'+fmtEUR(r.montant)+'</td>';
+      html += '<td class="row-check"><input type="checkbox" class="chk-recette" data-id="'+r.id+'" '+(r.paid?'checked':'')+' title="Reçue"></td>';
+      html += '<td class="row-actions"><button class="icon-btn btn-edit-recette" data-id="'+r.id+'">✏️</button></td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+  html += '<div class="total-line"><span>Total recettes</span><span class="amount pos">'+fmtEUR(t.totalRecettes)+'</span></div>';
+  html += '</div>';
+
+  // DEPENSES PAR CATEGORIE
+  html += '<div class="card">';
+  html += '<div class="card-head" style="justify-content:flex-start;gap:12px;">';
+  html += '<h2>🧾 Dépenses par catégorie</h2>';
+  html += '<button class="ghost small" id="btn-add-expense-line">+ Ajouter une dépense</button>';
+  html += '</div>';
+
+  state.categories.forEach(function(cat, catIndex){
+    var bucket = t.byCat[cat.id];
+    var hasVariable = bucket.items.some(function(it){ return it.charge.type === 'variable'; });
+    html += '<div class="cat-block">';
+    html += '<div class="cat-block-title"><h3>'+escapeHtml(cat.nom)+'</h3><span class="pill '+cat.type+'">'+(cat.type==='fixe'?'Fixe':'Variable')+'</span>';
+    html += '<span style="margin-left:auto;"></span>';
+    if(cat.id === 'cat-alimentation'){
+      html += '<button class="btn-highlight small" id="btn-details-alimentation" style="margin-right:6px;">Tableau détaillé</button>';
+    }
+    html += '<button class="icon-btn btn-edit-cat" data-id="'+cat.id+'" title="Modifier la catégorie">✏️</button>';
+    html += '</div>';
+    if(bucket.items.length === 0){
+      html += '<div class="empty-hint">Aucune charge dans cette catégorie.</div>';
+    } else {
+      html += '<div class="table-scroll"><table class="line-table"><thead><tr><th class="row-move"></th><th>Nom</th><th class="amt-col">Prévu</th>';
+      if(hasVariable){ html += '<th class="amt-col">Dépensé</th><th class="amt-col">Reste</th>'; }
+      html += '<th class="row-check"></th><th></th></tr></thead><tbody>';
+      bucket.items.forEach(function(it, itemIndex){
+        var ch = it.charge;
+        html += '<tr data-id="'+ch.id+'" class="'+(ch.paid?'line-checked':'')+'">';
+        html += '<td class="row-move">';
+        html += '<button class="icon-btn btn-move-charge" data-id="'+ch.id+'" data-dir="-1" title="Monter" '+(itemIndex===0?'disabled':'')+'>▲</button>';
+        html += '<button class="icon-btn btn-move-charge" data-id="'+ch.id+'" data-dir="1" title="Descendre" '+(itemIndex===bucket.items.length-1?'disabled':'')+'>▼</button>';
+        html += '</td>';
+        html += '<td>'+escapeHtml(ch.nom)+'</td>';
+        html += '<td class="amt-col amount">'+fmtEUR(it.prevu)+'</td>';
+        if(hasVariable){
+          if(ch.type === 'variable'){
+            html += '<td class="amt-col amount">'+fmtEUR(it.reel)+'</td>';
+            html += '<td class="amt-col amount '+(it.reste>=0?'pos':'neg')+'">'+fmtEUR(it.reste)+'</td>';
+          } else {
+            html += '<td class="amt-col"></td><td class="amt-col"></td>';
+          }
+        }
+        if(ch.type === 'variable'){
+          html += '<td class="row-check"></td>';
+        } else {
+          html += '<td class="row-check"><input type="checkbox" class="chk-charge" data-id="'+ch.id+'" '+(ch.paid?'checked':'')+' title="Payée"></td>';
+        }
+        html += '<td class="row-actions">';
+        if(ch.type === 'variable'){
+          html += '<button class="icon-btn btn-add-expense" data-id="'+ch.id+'" title="Ajouter une dépense">➕</button>';
+        }
+        html += '<button class="icon-btn btn-edit-charge" data-id="'+ch.id+'">✏️</button>';
+        html += '</td></tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    html += '<div style="display:flex;justify-content:flex-end;align-items:center;margin-top:6px;">';
+    html += '<div class="amount">Sous-total : '+fmtEUR(bucket.sousTotal)+'</div>';
+    html += '</div>';
+    html += '</div>';
+  });
+
+  html += '<div class="total-line"><span>Total dépenses</span><span class="amount">'+fmtEUR(t.totalCharges)+'</span></div>';
+  html += '<div class="total-line"><span>Solde du mois</span><span class="amount '+(t.solde>=0?'pos':'neg')+'">'+fmtEUR(t.solde)+'</span></div>';
+  html += '</div>';
+
+  html += '<div style="text-align:center;margin-top:8px;">';
+  html += '<button class="secondary" id="btn-print-month">🖨️ Imprimer / Exporter en PDF</button>';
+  html += '</div>';
+
+  main.innerHTML += html;
+
+  document.getElementById('btn-add-recette').onclick = function(){ openRecetteModal(monthId, null); };
+  document.getElementById('btn-add-expense-line').onclick = function(){ openChargeModal(monthId, null, null); };
+  document.getElementById('btn-print-month').onclick = function(){ printMonth(monthId); };
+  var btnDetailsAlim = document.getElementById('btn-details-alimentation');
+  if(btnDetailsAlim){ btnDetailsAlim.onclick = function(){ openVariableExpensesModal(monthId, 'cat-alimentation'); }; }
+  main.querySelectorAll('.btn-edit-cat').forEach(function(b){ b.onclick = function(){ openCategoryModal(this.getAttribute('data-id')); }; });
+  main.querySelectorAll('.btn-move-charge').forEach(function(b){ b.onclick = function(){ moveCharge(monthId, this.getAttribute('data-id'), parseInt(this.getAttribute('data-dir'),10)); }; });
+  main.querySelectorAll('.btn-edit-recette').forEach(function(b){ b.onclick = function(){ openRecetteModal(monthId, this.getAttribute('data-id')); }; });
+  main.querySelectorAll('.btn-edit-charge').forEach(function(b){ b.onclick = function(){ openChargeModal(monthId, this.getAttribute('data-id'), null); }; });
+  main.querySelectorAll('.btn-add-expense').forEach(function(b){ b.onclick = function(){ openExpenseModal(monthId, this.getAttribute('data-id')); }; });
+  main.querySelectorAll('.chk-recette').forEach(function(cb){
+    cb.onchange = function(){
+      var rid = this.getAttribute('data-id');
+      var checked = this.checked;
+      var r = month.recettes.find(function(x){ return x.id === rid; });
+      if(r){ r.paid = checked; saveState(); render(); }
+    };
+  });
+  main.querySelectorAll('.chk-charge').forEach(function(cb){
+    cb.onchange = function(){
+      var cid = this.getAttribute('data-id');
+      var checked = this.checked;
+      var c = month.charges.find(function(x){ return x.id === cid; });
+      if(c){ c.paid = checked; saveState(); render(); }
+    };
+  });
+}
+
+
+/* ---------------- Modale : Archives ---------------- */
+function openArchivesModal(){
+  var ids = archivedMonthIds();
+  var inner = '<h3>🗄️ Mois archivés</h3>';
+  if(ids.length === 0){
+    inner += '<div class="empty-hint">Aucun mois archivé pour le moment. Un mois passe automatiquement ici une fois terminé.</div>';
+  } else {
+    ids.slice().reverse().forEach(function(mid){
+      var m = state.months[mid];
+      var t = monthTotals(mid);
+      inner += '<div class="archive-card">';
+      inner += '<div><strong>'+escapeHtml(m.label)+'</strong><div class="muted">Recettes '+fmtEUR(t.totalRecettes)+' · Dépenses '+fmtEUR(t.totalCharges)+' · Solde <span class="'+(t.solde>=0?'pos':'neg')+'">'+fmtEUR(t.solde)+'</span></div></div>';
+      inner += '<button class="ghost small" data-open="'+mid+'">Consulter</button>';
+      inner += '</div>';
+    });
+  }
+  inner += '<div class="modal-foot"><button class="secondary" id="archives-close">Fermer</button></div>';
+  openModalShell(inner);
+  document.getElementById('archives-close').onclick = closeModal;
+  document.querySelectorAll('#modal-overlay [data-open]').forEach(function(b){
+    b.onclick = function(){
+      state.currentMonthId = this.getAttribute('data-open');
+      saveState(); closeModal(); render();
+    };
+  });
+}
+
+/* ---------------- Modale : Dépenses variables (mois sélectionné) ---------------- */
+function openVariableExpensesModal(monthId, categoryId){
+  var month = getMonth(monthId);
+  var chargeIdsInCat = categoryId ? month.charges.filter(function(c){ return c.categoryId === categoryId; }).map(function(c){ return c.id; }) : null;
+  var list = month.expenses.slice()
+    .filter(function(e){ return !chargeIdsInCat || chargeIdsInCat.indexOf(e.chargeId) !== -1; })
+    .sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+  var total = list.reduce(function(s,e){ return s + (Number(e.montant)||0); }, 0);
+  var cat = categoryId ? state.categories.find(function(c){ return c.id === categoryId; }) : null;
+
+  var inner = '<button class="modal-x-close" id="varexp-close-x" title="Fermer">✕</button>';
+  inner += '<h3>📋 '+escapeHtml(cat?cat.nom:'Dépenses variables')+' · '+escapeHtml(month.label)+'</h3>';
+  inner += '<div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;">';
+  inner += '<button class="btn-highlight small" id="btn-quick-add-expense">+ Ajouter une dépense</button>';
+  inner += '<button class="ghost small" id="btn-print-varexp">🖨️ Imprimer</button>';
+  inner += '</div>';
+  if(list.length === 0){
+    inner += '<div class="empty-hint">Aucune dépense enregistrée ce mois-ci.</div>';
+  } else {
+    inner += '<div class="table-scroll"><table class="line-table"><thead><tr><th>Date</th><th>Charge</th><th>Libellé</th><th class="amt-col">Montant</th><th class="row-check"></th><th></th></tr></thead><tbody>';
+    list.forEach(function(e){
+      var charge = month.charges.find(function(c){ return c.id === e.chargeId; });
+      inner += '<tr class="'+(e.paid?'line-checked':'')+'">';
+      inner += '<td>'+fmtDate(e.date)+'</td>';
+      inner += '<td>'+escapeHtml(charge?charge.nom:'(supprimée)')+'</td>';
+      inner += '<td>'+escapeHtml(e.label||'')+'</td>';
+      inner += '<td class="amt-col amount">'+fmtEUR(e.montant)+'</td>';
+      inner += '<td class="row-check"><input type="checkbox" class="chk-expense-modal" data-id="'+e.id+'" '+(e.paid?'checked':'')+'></td>';
+      inner += '<td class="row-actions"><button class="icon-btn btn-edit-expense-modal" data-id="'+e.id+'">✏️</button></td>';
+      inner += '</tr>';
+    });
+    inner += '</tbody></table></div>';
+    inner += '<div class="total-line"><span>Total</span><span class="amount">'+fmtEUR(total)+'</span></div>';
+  }
+  inner += '<div class="modal-foot"><button class="secondary" id="varexp-close">Fermer</button></div>';
+  openModalShell(inner, true);
+  document.getElementById('varexp-close').onclick = closeModal;
+  document.getElementById('varexp-close-x').onclick = closeModal;
+  document.getElementById('btn-quick-add-expense').onclick = function(){
+    openQuickExpenseModal(monthId, categoryId);
+  };
+  document.getElementById('btn-print-varexp').onclick = function(){
+    printVariableExpenses(monthId, categoryId);
+  };
+  document.querySelectorAll('#modal-overlay .chk-expense-modal').forEach(function(cb){
+    cb.onchange = function(){
+      var id = this.getAttribute('data-id');
+      var checked = this.checked;
+      var e = month.expenses.find(function(x){ return x.id === id; });
+      if(e){ e.paid = checked; saveState(); render(); }
+      var tr = this.closest('tr');
+      if(tr) tr.classList.toggle('line-checked', checked);
+    };
+  });
+  document.querySelectorAll('#modal-overlay .btn-edit-expense-modal').forEach(function(b){
+    b.onclick = function(){
+      openEditExpenseModal(monthId, this.getAttribute('data-id'), categoryId);
+    };
+  });
+}
+
+/* ---- Ajout rapide d'une dépense variable (depuis la pop-up Détails) ---- */
+function openQuickExpenseModal(monthId, backCategoryId){
+  var month = getMonth(monthId);
+  var variableCharges = month.charges.filter(function(c){ return c.type === 'variable'; });
+
+  var options = variableCharges.map(function(c){
+    var cat = state.categories.find(function(x){ return x.id === c.categoryId; });
+    return '<option value="'+c.id+'">'+escapeHtml(c.nom)+(cat?' ('+escapeHtml(cat.nom)+')':'')+'</option>';
+  }).join('');
+
+  openModalShell(
+    '<h3>Ajouter une dépense</h3>'+
+    '<div class="field"><label>Charge concernée</label><select id="f-charge">'+options+'</select></div>'+
+    '<div class="field"><label>Date</label><input type="date" id="f-date" value="'+todayISO()+'"></div>'+
+    '<div class="field"><label>Libellé (optionnel)</label><input type="text" id="f-label" placeholder="Ex : Courses Leclerc"></div>'+
+    '<div class="field"><label>Montant (€)</label><input type="number" step="0.01" id="f-montant" placeholder="0.00"></div>'+
+    '<div class="modal-foot">'+
+      '<button class="secondary" id="f-cancel">Annuler</button>'+
+      '<button id="f-save">Ajouter la dépense</button>'+
+    '</div>'
+  );
+  document.getElementById('f-cancel').onclick = function(){ openVariableExpensesModal(monthId, backCategoryId); };
+  document.getElementById('f-save').onclick = function(){
+    var montant = parseFloat(document.getElementById('f-montant').value);
+    var chargeId = document.getElementById('f-charge').value;
+    if(!montant || montant <= 0){ showToast('Indique un montant valide.', true); return; }
+    if(!chargeId){ showToast('Choisis une charge.', true); return; }
+    month.expenses.push({
+      id: uid('exp'),
+      chargeId: chargeId,
+      date: document.getElementById('f-date').value || todayISO(),
+      label: document.getElementById('f-label').value.trim(),
+      montant: montant
+    });
+    saveState(); render();
+    showToast('Dépense ajoutée : -'+fmtEUR(montant));
+    openVariableExpensesModal(monthId, backCategoryId);
+  };
+}
+
+/* ---- Modifier / supprimer une dépense (depuis la pop-up Détails) ---- */
+function openEditExpenseModal(monthId, expenseId, backCategoryId){
+  var month = getMonth(monthId);
+  var e = month.expenses.find(function(x){ return x.id === expenseId; });
+  if(!e) return;
+  var charge = month.charges.find(function(c){ return c.id === e.chargeId; });
+
+  openModalShell(
+    '<h3>Modifier la dépense</h3>'+
+    '<p class="muted">Charge : '+escapeHtml(charge?charge.nom:'(supprimée)')+'</p>'+
+    '<div class="field"><label>Date</label><input type="date" id="f-date" value="'+escapeHtml(e.date||todayISO())+'"></div>'+
+    '<div class="field"><label>Libellé (optionnel)</label><input type="text" id="f-label" value="'+escapeHtml(e.label||'')+'"></div>'+
+    '<div class="field"><label>Montant (€)</label><input type="number" step="0.01" id="f-montant" value="'+e.montant+'"></div>'+
+    '<div class="modal-foot">'+
+      '<button class="danger" id="f-del" style="margin-right:auto;">Supprimer</button>'+
+      '<button class="secondary" id="f-cancel">Annuler</button>'+
+      '<button id="f-save">Enregistrer</button>'+
+    '</div>'
+  );
+  document.getElementById('f-cancel').onclick = function(){ openVariableExpensesModal(monthId, backCategoryId); };
+  document.getElementById('f-save').onclick = function(){
+    var montant = parseFloat(document.getElementById('f-montant').value);
+    if(!montant || montant <= 0){ showToast('Indique un montant valide.', true); return; }
+    e.date = document.getElementById('f-date').value || todayISO();
+    e.label = document.getElementById('f-label').value.trim();
+    e.montant = montant;
+    saveState(); render();
+    showToast('Dépense modifiée.');
+    openVariableExpensesModal(monthId, backCategoryId);
+  };
+  document.getElementById('f-del').onclick = function(){
+    openConfirm('Supprimer cette dépense ?', 'Le montant sera de nouveau disponible dans l\'enveloppe prévue.', function(){
+      month.expenses = month.expenses.filter(function(x){ return x.id !== expenseId; });
+      saveState();
+      render();
+      openVariableExpensesModal(monthId, backCategoryId);
+    });
+  };
+}
+
+/* ---------------- Modale : Réglages ---------------- */
+function openSettingsModal(){
+  var html = '<h3>⚙️ Réglages</h3>';
+
+  html += '<div style="margin-bottom:18px;">';
+  var statusLabel = cloudConnected === true ? 'Active' : (cloudConnected === false ? 'Bloquée' : (cloudReady ? 'Vérification…' : 'Indisponible'));
+  var statusClass = cloudConnected === true ? 'on' : 'off';
+  html += '<div class="apercu-row"><span><span class="sync-dot '+statusClass+'" id="cloud-status-dot"></span>Sauvegarde en ligne</span><span class="muted" id="cloud-status-label">'+statusLabel+'</span></div>';
+  html += '<p class="muted" style="margin-top:6px;">Une copie de secours est envoyée automatiquement en ligne à chaque modification, pour éviter toute perte de données.</p>';
+  if(cloudConnected === false && cloudLastError){
+    html += '<p class="muted" style="margin-top:6px;color:#B23A3A;">Détail : '+escapeHtml(cloudLastError)+'</p>';
+  }
+  html += '<button class="secondary small" id="btn-test-cloud" style="margin-top:8px;">Tester maintenant</button>';
+  html += '</div>';
+
+  html += '<div>';
+  html += '<h3 style="font-size:16px;">💾 Sauvegarde</h3>';
+  html += '<p class="muted">Exporte toutes les données dans un fichier, ou récupère une sauvegarde précédente.</p>';
+  html += '<div style="display:flex;gap:10px;flex-wrap:wrap;">';
+  html += '<button class="secondary" id="btn-export">Exporter (.json)</button>';
+  html += '<button class="secondary" id="btn-import">Importer un fichier</button>';
+  html += '<input type="file" id="file-import" accept="application/json" style="display:none;">';
+  html += '</div>';
+  html += '</div>';
+
+  html += '<div class="modal-foot"><button class="secondary" id="settings-close">Fermer</button></div>';
+
+  openModalShell(html);
+  document.getElementById('settings-close').onclick = closeModal;
+
+  document.getElementById('btn-export').onclick = exportData;
+  document.getElementById('btn-import').onclick = function(){ document.getElementById('file-import').click(); };
+  document.getElementById('file-import').onchange = function(e){ importData(e.target.files[0]); };
+
+  document.getElementById('btn-test-cloud').onclick = function(){
+    var btn = document.getElementById('btn-test-cloud');
+    var dot = document.getElementById('cloud-status-dot');
+    var label = document.getElementById('cloud-status-label');
+    btn.disabled = true;
+    label.textContent = 'Vérification en cours…';
+    cloudTestNow(function(success, errorMsg){
+      btn.disabled = false;
+      if(success){
+        dot.className = 'sync-dot on';
+        label.textContent = 'Active';
+        showToast('Sauvegarde en ligne : ça fonctionne !');
+      } else {
+        dot.className = 'sync-dot off';
+        label.textContent = 'Bloquée';
+        showToast('Sauvegarde en ligne bloquée : '+(errorMsg||'raison inconnue'), true);
+      }
+      openSettingsModal();
+    });
+  };
+}
+
+/* ---------------- Modales génériques ---------------- */
+function openModalShell(innerHtml, large){
+  closeModal();
+  var overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'modal-overlay';
+  overlay.innerHTML = '<div class="modal-box'+(large?' modal-box-large':'')+'">'+innerHtml+'</div>';
+  overlay.addEventListener('mousedown', function(e){ if(e.target === overlay) closeModal(); });
+  document.body.appendChild(overlay);
+}
+function closeModal(){
+  var o = document.getElementById('modal-overlay');
+  if(o) o.remove();
+}
+
+function openConfirm(title, msg, onYes){
+  openModalShell(
+    '<h3>'+escapeHtml(title)+'</h3>'+
+    '<p class="muted">'+escapeHtml(msg)+'</p>'+
+    '<div class="modal-foot">'+
+      '<button class="secondary" id="confirm-no">Annuler</button>'+
+      '<button class="danger" id="confirm-yes">Confirmer</button>'+
+    '</div>'
+  );
+  document.getElementById('confirm-no').onclick = closeModal;
+  document.getElementById('confirm-yes').onclick = function(){ closeModal(); onYes(); };
+}
+
+/* ---- Recette ---- */
+function openRecetteModal(monthId, id){
+  var month = getMonth(monthId);
+  var existing = id ? month.recettes.find(function(r){ return r.id === id; }) : null;
+  openModalShell(
+    '<h3>'+(existing?'Modifier la recette':'Ajouter une recette')+'</h3>'+
+    '<div class="field"><label>Nom</label><input type="text" id="f-nom" value="'+escapeHtml(existing?existing.nom:'')+'" placeholder="Ex : Retraite"></div>'+
+    '<div class="field"><label>Montant (€)</label><input type="number" step="0.01" id="f-montant" value="'+(existing?existing.montant:'')+'"></div>'+
+    '<div class="modal-foot">'+
+      (existing?'<button class="danger" id="f-del" style="margin-right:auto;">Supprimer</button>':'')+
+      '<button class="secondary" id="f-cancel">Annuler</button>'+
+      '<button id="f-save">Enregistrer</button>'+
+    '</div>'
+  );
+  document.getElementById('f-cancel').onclick = closeModal;
+  document.getElementById('f-save').onclick = function(){
+    var nom = document.getElementById('f-nom').value.trim();
+    var montant = parseFloat(document.getElementById('f-montant').value) || 0;
+    if(!nom){ showToast('Merci d\'indiquer un nom.', true); return; }
+    if(existing){ existing.nom = nom; existing.montant = montant; }
+    else { month.recettes.push({ id: uid('rec'), nom: nom, montant: montant }); }
+    saveState(); closeModal(); render();
+    showToast('Recette enregistrée.');
+  };
+  if(existing){
+    document.getElementById('f-del').onclick = function(){
+      closeModal();
+      confirmDeleteRecette(monthId, id);
+    };
+  }
+}
+function confirmDeleteRecette(monthId, id){
+  var month = getMonth(monthId);
+  openConfirm('Supprimer cette recette ?', 'Cette action est définitive pour ce mois.', function(){
+    month.recettes = month.recettes.filter(function(r){ return r.id !== id; });
+    saveState(); render(); showToast('Recette supprimée.');
+  });
+}
+
+/* ---- Charge (dépense fixe/variable) ---- */
+function openChargeModal(monthId, id, forcedCatId){
+  var month = getMonth(monthId);
+  var existing = id ? month.charges.find(function(c){ return c.id === id; }) : null;
+  var catId = existing ? existing.categoryId : (forcedCatId || (state.categories[0] ? state.categories[0].id : null));
+  var cat = state.categories.find(function(c){ return c.id === catId; });
+  var type = existing ? existing.type : (cat ? cat.type : 'fixe');
+
+  var catOptions = state.categories.map(function(c){
+    return '<option value="'+c.id+'" '+(c.id===catId?'selected':'')+'>'+escapeHtml(c.nom)+'</option>';
+  }).join('');
+  catOptions += '<option value="__new__">➕ Créer une nouvelle catégorie…</option>';
+
+  openModalShell(
+    '<h3>'+(existing?'Modifier la charge':'Ajouter une dépense')+'</h3>'+
+    '<div class="field"><label>Nom</label><input type="text" id="f-nom" value="'+escapeHtml(existing?existing.nom:'')+'" placeholder="Ex : Électricité"></div>'+
+    '<div class="field"><label>Catégorie</label><select id="f-cat">'+catOptions+'</select></div>'+
+    '<div class="field" id="new-cat-fields" style="display:none;border:2px dashed var(--accent-soft);border-radius:10px;padding:12px;">'+
+      '<label>Nom de la nouvelle catégorie</label><input type="text" id="f-newcat-nom" placeholder="Ex : Loisirs">'+
+      '<label style="margin-top:10px;">Type par défaut</label>'+
+      '<div class="radio-group">'+
+        '<div class="radio-opt fixe selected" id="newcat-opt-fixe">Fixe</div>'+
+        '<div class="radio-opt variable" id="newcat-opt-variable">Variable</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="field"><label>Montant prévu (€)</label><input type="number" step="0.01" id="f-montant" value="'+(existing?existing.prevu:'')+'"></div>'+
+    '<div class="field"><label>Type de charge</label>'+
+      '<div class="radio-group">'+
+        '<div class="radio-opt fixe '+(type==='fixe'?'selected':'')+'" id="opt-fixe">Fixe</div>'+
+        '<div class="radio-opt variable '+(type==='variable'?'selected':'')+'" id="opt-variable">Variable</div>'+
+      '</div>'+
+      '<div class="muted" style="margin-top:6px;">Une charge variable peut recevoir des dépenses réelles qui viennent réduire le montant restant.</div>'+
+    '</div>'+
+    '<div class="modal-foot">'+
+      (existing?'<button class="danger" id="f-del" style="margin-right:auto;">Supprimer</button>':'')+
+      '<button class="secondary" id="f-cancel">Annuler</button>'+
+      '<button id="f-save">Enregistrer</button>'+
+    '</div>'
+  );
+  var selectedType = type;
+  var newCatType = 'fixe';
+  document.getElementById('opt-fixe').onclick = function(){
+    selectedType = 'fixe';
+    document.getElementById('opt-fixe').classList.add('selected');
+    document.getElementById('opt-variable').classList.remove('selected');
+  };
+  document.getElementById('opt-variable').onclick = function(){
+    selectedType = 'variable';
+    document.getElementById('opt-variable').classList.add('selected');
+    document.getElementById('opt-fixe').classList.remove('selected');
+  };
+  document.getElementById('newcat-opt-fixe').onclick = function(){
+    newCatType = 'fixe';
+    document.getElementById('newcat-opt-fixe').classList.add('selected');
+    document.getElementById('newcat-opt-variable').classList.remove('selected');
+  };
+  document.getElementById('newcat-opt-variable').onclick = function(){
+    newCatType = 'variable';
+    document.getElementById('newcat-opt-variable').classList.add('selected');
+    document.getElementById('newcat-opt-fixe').classList.remove('selected');
+  };
+  document.getElementById('f-cat').onchange = function(){
+    document.getElementById('new-cat-fields').style.display = (this.value === '__new__') ? 'block' : 'none';
+  };
+  document.getElementById('f-cancel').onclick = closeModal;
+  document.getElementById('f-save').onclick = function(){
+    var nom = document.getElementById('f-nom').value.trim();
+    var montant = parseFloat(document.getElementById('f-montant').value) || 0;
+    var newCatId = document.getElementById('f-cat').value;
+    if(!nom){ showToast('Merci d\'indiquer un nom.', true); return; }
+    if(newCatId === '__new__'){
+      var newCatNom = document.getElementById('f-newcat-nom').value.trim();
+      if(!newCatNom){ showToast('Merci d\'indiquer un nom de catégorie.', true); return; }
+      var newCat = { id: uid('cat'), nom: newCatNom, type: newCatType };
+      state.categories.push(newCat);
+      newCatId = newCat.id;
+    }
+    if(existing){
+      existing.nom = nom; existing.prevu = montant; existing.categoryId = newCatId; existing.type = selectedType;
+    } else {
+      month.charges.push({ id: uid('ch'), categoryId: newCatId, nom: nom, prevu: montant, type: selectedType });
+    }
+    saveState(); closeModal(); render();
+    showToast('Dépense enregistrée.');
+  };
+  if(existing){
+    document.getElementById('f-del').onclick = function(){ closeModal(); confirmDeleteCharge(monthId, id); };
+  }
+}
+function confirmDeleteCharge(monthId, id){
+  var month = getMonth(monthId);
+  openConfirm('Supprimer cette charge ?', 'Les dépenses déjà enregistrées pour cette charge seront aussi supprimées.', function(){
+    month.charges = month.charges.filter(function(c){ return c.id !== id; });
+    month.expenses = month.expenses.filter(function(e){ return e.chargeId !== id; });
+    saveState(); render(); showToast('Charge supprimée.');
+  });
+}
+
+/* ---- Dépense réelle (sur charge variable) ---- */
+function openExpenseModal(monthId, chargeId){
+  var month = getMonth(monthId);
+  var charge = month.charges.find(function(c){ return c.id === chargeId; });
+  if(!charge) return;
+  var reelActuel = chargeReel(month, chargeId);
+  var reste = (Number(charge.prevu)||0) - reelActuel;
+
+  openModalShell(
+    '<h3>Ajouter une dépense — '+escapeHtml(charge.nom)+'</h3>'+
+    '<p class="muted">Reste disponible avant cette dépense : <strong>'+fmtEUR(reste)+'</strong></p>'+
+    '<div class="field"><label>Date</label><input type="date" id="f-date" value="'+todayISO()+'"></div>'+
+    '<div class="field"><label>Libellé (optionnel)</label><input type="text" id="f-label" placeholder="Ex : Courses Leclerc"></div>'+
+    '<div class="field"><label>Montant (€)</label><input type="number" step="0.01" id="f-montant" placeholder="0.00"></div>'+
+    '<div class="modal-foot">'+
+      '<button class="secondary" id="f-cancel">Annuler</button>'+
+      '<button id="f-save">Ajouter la dépense</button>'+
+    '</div>'
+  );
+  document.getElementById('f-cancel').onclick = closeModal;
+  document.getElementById('f-save').onclick = function(){
+    var montant = parseFloat(document.getElementById('f-montant').value);
+    if(!montant || montant <= 0){ showToast('Indique un montant valide.', true); return; }
+    month.expenses.push({
+      id: uid('exp'),
+      chargeId: chargeId,
+      date: document.getElementById('f-date').value || todayISO(),
+      label: document.getElementById('f-label').value.trim(),
+      montant: montant
+    });
+    saveState(); closeModal(); render();
+    showToast('Dépense ajoutée : -'+fmtEUR(montant));
+  };
+}
+
+/* ---- Compte avec Véronique ---- */
+function openVeroniqueModal(){
+  var entries = (state.veronique.entries || []).slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+  var solde = veroniqueBalance();
+
+  var inner = '<button class="modal-x-close" id="vero-close-x" title="Fermer">✕</button>';
+  inner += '<h3>👩‍👧 Compte avec Véronique</h3>';
+  if(solde === 0){
+    inner += '<p class="muted">Aucun compte en cours.</p>';
+  } else if(solde > 0){
+    inner += '<p style="font-size:19px;font-weight:800;color:#3F7D4F;">Véronique te doit '+fmtEUR(solde)+'</p>';
+  } else {
+    inner += '<p style="font-size:19px;font-weight:800;color:#B23A3A;">Tu dois '+fmtEUR(Math.abs(solde))+' à Véronique</p>';
+  }
+  inner += '<div style="margin-bottom:14px;"><button class="btn-highlight small" id="btn-add-vero">+ Ajouter une entrée</button></div>';
+
+  if(entries.length === 0){
+    inner += '<div class="empty-hint">Aucune entrée pour le moment.</div>';
+  } else {
+    inner += '<div class="table-scroll"><table class="line-table"><thead><tr><th>Date</th><th>Libellé</th><th>Sens</th><th class="amt-col">Montant</th><th class="row-check"></th><th></th></tr></thead><tbody>';
+    entries.forEach(function(e){
+      var sensLabel = e.direction === 'doit_a_mamie' ? 'Véronique doit' : 'Tu dois';
+      inner += '<tr class="'+(e.settled?'line-checked':'')+'">';
+      inner += '<td>'+fmtDate(e.date)+'</td>';
+      inner += '<td>'+escapeHtml(e.label||'')+'</td>';
+      inner += '<td>'+sensLabel+'</td>';
+      inner += '<td class="amt-col amount">'+fmtEUR(e.montant)+'</td>';
+      inner += '<td class="row-check"><input type="checkbox" class="chk-vero" data-id="'+e.id+'" '+(e.settled?'checked':'')+' title="Remboursé"></td>';
+      inner += '<td class="row-actions"><button class="icon-btn btn-edit-vero" data-id="'+e.id+'">✏️</button></td>';
+      inner += '</tr>';
+    });
+    inner += '</tbody></table></div>';
+  }
+  inner += '<div class="modal-foot"><button class="secondary" id="vero-close">Fermer</button></div>';
+
+  openModalShell(inner, true);
+  document.getElementById('vero-close').onclick = closeModal;
+  document.getElementById('vero-close-x').onclick = closeModal;
+  document.getElementById('btn-add-vero').onclick = function(){ openVeroniqueEntryModal(null); };
+  document.querySelectorAll('#modal-overlay .btn-edit-vero').forEach(function(b){
+    b.onclick = function(){ openVeroniqueEntryModal(this.getAttribute('data-id')); };
+  });
+  document.querySelectorAll('#modal-overlay .chk-vero').forEach(function(cb){
+    cb.onchange = function(){
+      var id = this.getAttribute('data-id');
+      var checked = this.checked;
+      var e = state.veronique.entries.find(function(x){ return x.id === id; });
+      if(e){ e.settled = checked; saveState(); render(); }
+      var tr = this.closest('tr');
+      if(tr) tr.classList.toggle('line-checked', checked);
+      // Rafraîchir le solde affiché en tête de la pop-up sans tout reconstruire
+      openVeroniqueModal();
+    };
+  });
+}
+
+function openVeroniqueEntryModal(id){
+  var existing = id ? state.veronique.entries.find(function(e){ return e.id === id; }) : null;
+  var direction = existing ? existing.direction : 'doit_a_mamie';
+
+  openModalShell(
+    '<h3>'+(existing?'Modifier l\'entrée':'Ajouter une entrée')+'</h3>'+
+    '<div class="field"><label>Qui doit de l\'argent ?</label>'+
+      '<div class="radio-group">'+
+        '<div class="radio-opt variable '+(direction==='doit_a_mamie'?'selected':'')+'" id="vopt-mamie">Véronique doit à Marie-France</div>'+
+        '<div class="radio-opt fixe '+(direction==='mamie_doit'?'selected':'')+'" id="vopt-vero">Marie-France doit à Véronique</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="field"><label>Date</label><input type="date" id="f-date" value="'+escapeHtml(existing?existing.date:todayISO())+'"></div>'+
+    '<div class="field"><label>Libellé</label><input type="text" id="f-label" value="'+escapeHtml(existing?existing.label:'')+'" placeholder="Ex : Courses pour Véronique"></div>'+
+    '<div class="field"><label>Montant (€)</label><input type="number" step="0.01" id="f-montant" value="'+(existing?existing.montant:'')+'"></div>'+
+    '<div class="modal-foot">'+
+      (existing?'<button class="danger" id="f-del" style="margin-right:auto;">Supprimer</button>':'')+
+      '<button class="secondary" id="f-cancel">Annuler</button>'+
+      '<button id="f-save">Enregistrer</button>'+
+    '</div>'
+  );
+  var selectedDirection = direction;
+  document.getElementById('vopt-mamie').onclick = function(){
+    selectedDirection = 'doit_a_mamie';
+    document.getElementById('vopt-mamie').classList.add('selected');
+    document.getElementById('vopt-vero').classList.remove('selected');
+  };
+  document.getElementById('vopt-vero').onclick = function(){
+    selectedDirection = 'mamie_doit';
+    document.getElementById('vopt-vero').classList.add('selected');
+    document.getElementById('vopt-mamie').classList.remove('selected');
+  };
+  document.getElementById('f-cancel').onclick = openVeroniqueModal;
+  document.getElementById('f-save').onclick = function(){
+    var label = document.getElementById('f-label').value.trim();
+    var montant = parseFloat(document.getElementById('f-montant').value);
+    var date = document.getElementById('f-date').value || todayISO();
+    if(!label){ showToast('Merci d\'indiquer un libellé.', true); return; }
+    if(!montant || montant <= 0){ showToast('Indique un montant valide.', true); return; }
+    if(existing){
+      existing.label = label; existing.montant = montant; existing.date = date; existing.direction = selectedDirection;
+    } else {
+      state.veronique.entries.push({ id: uid('vero'), label: label, montant: montant, date: date, direction: selectedDirection, settled: false });
+    }
+    saveState(); render();
+    showToast('Entrée enregistrée.');
+    openVeroniqueModal();
+  };
+  if(existing){
+    document.getElementById('f-del').onclick = function(){
+      openConfirm('Supprimer cette entrée ?', 'Cette action est définitive.', function(){
+        state.veronique.entries = state.veronique.entries.filter(function(e){ return e.id !== id; });
+        saveState(); render();
+        showToast('Entrée supprimée.');
+        openVeroniqueModal();
+      });
+    };
+  }
+}
+
+/* ---- Catégories ---- */
+function openCategoryModal(id){
+  var existing = id ? state.categories.find(function(c){ return c.id === id; }) : null;
+  var type = existing ? existing.type : 'fixe';
+  openModalShell(
+    '<h3>'+(existing?'Modifier la catégorie':'Nouvelle catégorie')+'</h3>'+
+    '<div class="field"><label>Nom</label><input type="text" id="f-nom" value="'+escapeHtml(existing?existing.nom:'')+'" placeholder="Ex : Loisirs"></div>'+
+    '<div class="field"><label>Type par défaut pour les nouvelles charges</label>'+
+      '<div class="radio-group">'+
+        '<div class="radio-opt fixe '+(type==='fixe'?'selected':'')+'" id="opt-fixe">Fixe</div>'+
+        '<div class="radio-opt variable '+(type==='variable'?'selected':'')+'" id="opt-variable">Variable</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="modal-foot">'+
+      (existing?'<button class="danger" id="f-del" style="margin-right:auto;">Supprimer</button>':'')+
+      '<button class="secondary" id="f-cancel">Annuler</button>'+
+      '<button id="f-save">Enregistrer</button>'+
+    '</div>'
+  );
+  var selectedType = type;
+  document.getElementById('opt-fixe').onclick = function(){
+    selectedType='fixe';
+    document.getElementById('opt-fixe').classList.add('selected');
+    document.getElementById('opt-variable').classList.remove('selected');
+  };
+  document.getElementById('opt-variable').onclick = function(){
+    selectedType='variable';
+    document.getElementById('opt-variable').classList.add('selected');
+    document.getElementById('opt-fixe').classList.remove('selected');
+  };
+  document.getElementById('f-cancel').onclick = closeModal;
+  document.getElementById('f-save').onclick = function(){
+    var nom = document.getElementById('f-nom').value.trim();
+    if(!nom){ showToast('Merci d\'indiquer un nom.', true); return; }
+    if(existing){ existing.nom = nom; existing.type = selectedType; }
+    else { state.categories.push({ id: uid('cat'), nom: nom, type: selectedType }); }
+    saveState(); closeModal(); render();
+    showToast('Catégorie enregistrée.');
+  };
+  if(existing){
+    document.getElementById('f-del').onclick = function(){ closeModal(); confirmDeleteCategory(id); };
+  }
+}
+function confirmDeleteCategory(id){
+  openConfirm('Supprimer cette catégorie ?', 'Toutes les charges de cette catégorie, dans tous les mois, seront aussi supprimées.', function(){
+    state.categories = state.categories.filter(function(c){ return c.id !== id; });
+    Object.keys(state.months).forEach(function(mid){
+      var month = state.months[mid];
+      var removedIds = month.charges.filter(function(c){ return c.categoryId === id; }).map(function(c){ return c.id; });
+      month.charges = month.charges.filter(function(c){ return c.categoryId !== id; });
+      month.expenses = month.expenses.filter(function(e){ return removedIds.indexOf(e.chargeId) === -1; });
+    });
+    saveState(); render(); showToast('Catégorie supprimée.');
+  });
+}
+
+/* ---------------- Réordonnancement (catégories et charges) ---------------- */
+function moveCategory(id, direction){
+  var idx = state.categories.findIndex(function(c){ return c.id === id; });
+  if(idx === -1) return;
+  var newIdx = idx + direction;
+  if(newIdx < 0 || newIdx >= state.categories.length) return;
+  var tmp = state.categories[idx];
+  state.categories[idx] = state.categories[newIdx];
+  state.categories[newIdx] = tmp;
+  saveState(); render();
+}
+function moveCharge(monthId, chargeId, direction){
+  var month = getMonth(monthId);
+  var ch = month.charges.find(function(c){ return c.id === chargeId; });
+  if(!ch) return;
+  // indices (dans le tableau complet) des charges de la même catégorie, dans l'ordre d'affichage
+  var sameCategoryIdx = [];
+  month.charges.forEach(function(c, i){ if(c.categoryId === ch.categoryId) sameCategoryIdx.push(i); });
+  var posInCat = sameCategoryIdx.indexOf(month.charges.indexOf(ch));
+  var swapWithPos = posInCat + direction;
+  if(swapWithPos < 0 || swapWithPos >= sameCategoryIdx.length) return;
+  var idxA = sameCategoryIdx[posInCat];
+  var idxB = sameCategoryIdx[swapWithPos];
+  var tmp = month.charges[idxA];
+  month.charges[idxA] = month.charges[idxB];
+  month.charges[idxB] = tmp;
+  saveState(); render();
+}
+
+/* ---------------- Nouveau mois ---------------- */
+function createNewMonth(){
+  var ids = sortedMonthIds();
+  var lastId = ids[ids.length-1];
+  var newId = nextMonthId(lastId);
+  if(state.months[newId]) return;
+  var lastMonth = state.months[lastId];
+
+  var newRecettes = lastMonth.recettes.map(function(r){ return { id: uid('rec'), nom: r.nom, montant: r.montant }; });
+  var newCharges = lastMonth.charges.map(function(c){ return { id: uid('ch'), categoryId: c.categoryId, nom: c.nom, prevu: c.prevu, type: c.type }; });
+
+  state.months[newId] = {
+    id: newId, label: monthLabel(newId),
+    recettes: newRecettes, charges: newCharges, expenses: []
+  };
+  state.currentMonthId = newId;
+  saveState();
+  showToast('Nouveau mois créé : '+monthLabel(newId));
+}
+
+/* ---------------- Impression ---------------- */
+function printMonth(monthId){
+  var month = getMonth(monthId);
+  var t = monthTotals(monthId);
+  var check = function(isChecked){ return isChecked ? '☑' : '☐'; };
+
+  var html = '<h1>Budget — '+escapeHtml(month.label)+'</h1>';
+
+  html += '<div class="print-col">';
+  html += '<h2>Recettes</h2><table><tbody>';
+  month.recettes.forEach(function(r){
+    html += '<tr><td class="pchk">'+check(r.paid)+'</td><td>'+escapeHtml(r.nom)+'</td><td class="pamt">'+fmtEUR(r.montant)+'</td></tr>';
+  });
+  html += '<tr class="ptotal"><td></td><th>Total recettes</th><th class="pamt">'+fmtEUR(t.totalRecettes)+'</th></tr>';
+  html += '</tbody></table>';
+  html += '</div>';
+
+  html += '<div class="print-columns">';
+  state.categories.forEach(function(cat){
+    var bucket = t.byCat[cat.id];
+    if(bucket.items.length === 0) return;
+    html += '<div class="print-col"><h2>'+escapeHtml(cat.nom)+'</h2><table><tbody>';
+    bucket.items.forEach(function(it){
+      var extra = it.charge.type === 'variable' ? ' (dép. '+fmtEUR(it.reel)+', reste '+fmtEUR(it.reste)+')' : '';
+      var chk = it.charge.type === 'variable' ? '' : check(it.charge.paid);
+      html += '<tr><td class="pchk">'+chk+'</td><td>'+escapeHtml(it.charge.nom)+extra+'</td><td class="pamt">'+fmtEUR(it.prevu)+'</td></tr>';
+    });
+    html += '<tr class="ptotal"><td></td><th>Sous-total</th><th class="pamt">'+fmtEUR(bucket.sousTotal)+'</th></tr>';
+    html += '</tbody></table></div>';
+  });
+  html += '</div>';
+
+  html += '<div class="print-col" style="max-width:320px;"><table><tbody>';
+  html += '<tr class="ptotal"><th>Total dépenses</th><th class="pamt">'+fmtEUR(t.totalCharges)+'</th></tr>';
+  html += '<tr class="ptotal"><th>Solde du mois</th><th class="pamt">'+fmtEUR(t.solde)+'</th></tr>';
+  html += '</tbody></table></div>';
+
+  document.getElementById('print-area').innerHTML = html;
+  window.print();
+}
+
+/* ---- Impression du détail des dépenses variables d'une catégorie ---- */
+function printVariableExpenses(monthId, categoryId){
+  var month = getMonth(monthId);
+  var chargeIdsInCat = categoryId ? month.charges.filter(function(c){ return c.categoryId === categoryId; }).map(function(c){ return c.id; }) : null;
+  var list = month.expenses.slice()
+    .filter(function(e){ return !chargeIdsInCat || chargeIdsInCat.indexOf(e.chargeId) !== -1; })
+    .sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
+  var total = list.reduce(function(s,e){ return s + (Number(e.montant)||0); }, 0);
+  var cat = categoryId ? state.categories.find(function(c){ return c.id === categoryId; }) : null;
+  var check = function(isChecked){ return isChecked ? '☑' : '☐'; };
+
+  var html = '<h1>'+escapeHtml(cat?cat.nom:'Dépenses variables')+' — '+escapeHtml(month.label)+'</h1>';
+  html += '<div class="print-col" style="max-width:600px;"><table><tbody>';
+  if(list.length === 0){
+    html += '<tr><td>Aucune dépense enregistrée ce mois-ci.</td></tr>';
+  } else {
+    html += '<tr><th>Date</th><th>Charge</th><th>Libellé</th><th class="pamt">Montant</th><th class="pchk"></th></tr>';
+    list.forEach(function(e){
+      var charge = month.charges.find(function(c){ return c.id === e.chargeId; });
+      html += '<tr><td>'+fmtDate(e.date)+'</td><td>'+escapeHtml(charge?charge.nom:'(supprimée)')+'</td><td>'+escapeHtml(e.label||'')+'</td><td class="pamt">'+fmtEUR(e.montant)+'</td><td class="pchk">'+check(e.paid)+'</td></tr>';
+    });
+    html += '<tr class="ptotal"><th colspan="3">Total</th><th class="pamt">'+fmtEUR(total)+'</th><th></th></tr>';
+  }
+  html += '</tbody></table></div>';
+
+  document.getElementById('print-area').innerHTML = html;
+
+  var styleTag = document.createElement('style');
+  styleTag.id = 'print-orientation-override';
+  styleTag.textContent = '@media print { @page { size: A4 portrait; margin: 14mm; } }';
+  document.head.appendChild(styleTag);
+
+  window.print();
+
+  var cleanup = function(){
+    var tag = document.getElementById('print-orientation-override');
+    if(tag) tag.remove();
+    window.removeEventListener('afterprint', cleanup);
+  };
+  window.addEventListener('afterprint', cleanup);
+}
+
+/* ---------------- Export / Import ---------------- */
+function exportData(){
+  var blob = new Blob([JSON.stringify(state, null, 1)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'budget-'+todayISO()+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  showToast('Export terminé.');
+}
+function importData(file){
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var data = JSON.parse(e.target.result);
+      if(!data.categories || !data.months){ throw new Error('format invalide'); }
+      openConfirm('Remplacer toutes les données ?', 'Les données actuelles seront écrasées par celles du fichier importé.', function(){
+        state = data;
+        saveState();
+        render();
+        showToast('Données importées.');
+      });
+    }catch(err){
+      showToast('Fichier invalide.', true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ---------------- Initialisation ---------------- */
+function init(){
+  loadState();
+  render();
+  attachCrossTabSync();
+  initCloud();
+  cloudSyncOnStartup();
+}
+
+/* Empêche un onglet resté ouvert avec des données périmées d'écraser
+   les modifications plus récentes enregistrées depuis un autre onglet. */
+function attachCrossTabSync(){
+  // Un autre onglet vient d'enregistrer : on récupère sa version tout de suite.
+  window.addEventListener('storage', function(e){
+    if(e.key !== STORAGE_KEY || !e.newValue) return;
+    try{
+      var incoming = JSON.parse(e.newValue);
+      if(!state.updatedAt || (incoming.updatedAt||0) > state.updatedAt){
+        state = incoming;
+        render();
+      }
+    }catch(err){}
+  });
+  // Quand on revient sur cet onglet (après en avoir utilisé un autre), on vérifie
+  // qu'on a bien la dernière version avant de continuer à l'utiliser.
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden) return;
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return;
+      var onDisk = JSON.parse(raw);
+      if(!state.updatedAt || (onDisk.updatedAt||0) > state.updatedAt){
+        state = onDisk;
+        render();
+      }
+    }catch(err){}
+  });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+</script>
+</body>
+</html>
